@@ -1,0 +1,9 @@
+{
+    "app_title": "My Personal Wallets",
+    "empty_wallets": "You haven't added a wallet yet.\nAdd one now using the button below!",
+    "dialog_title": "Create New Wallet",
+    "wallet_name_label": "Wallet Name",
+    "wallet_name_hint": "e.g., Salary Account, Cash",
+    "button_cancel": "Cancel",
+    "button_add": "Add"
+  }

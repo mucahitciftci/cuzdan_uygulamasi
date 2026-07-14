@@ -1,0 +1,9 @@
+{
+    "app_title": "Kişisel Cüzdanlarım",
+    "empty_wallets": "Henüz bir cüzdan eklemediniz.\nSağ alttaki butondan hemen ekleyin!",
+    "dialog_title": "Yeni Cüzdan Oluştur",
+    "wallet_name_label": "Cüzdan Adı",
+    "wallet_name_hint": "Örn: Maaş Hesabı, Birikim",
+    "button_cancel": "İptal",
+    "button_add": "Ekle"
+  }

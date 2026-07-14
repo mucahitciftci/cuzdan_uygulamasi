@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart'; // Yeni import
 import '../models/cuzdan_model.dart';
 
 class CuzdanListesiEkrani extends StatefulWidget {
@@ -9,25 +10,22 @@ class CuzdanListesiEkrani extends StatefulWidget {
 }
 
 class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
-  // Başlangıçta listemiz boş
   final List<Cuzdan> _cuzdanlar = [];
-
   final TextEditingController _adController = TextEditingController();
 
-  // Yeni cüzdan ekleme penceresi (Artık çok daha sade!)
   void _cuzdanEklemeDialogGoster() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Yeni Cüzdan Oluştur'),
+        title: Text('dialog_title'.tr()), // JSON'dan çekilen başlık
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _adController,
-              decoration: const InputDecoration(
-                labelText: 'Cüzdan Adı',
-                hintText: 'Örn: Akbank Hesabım, Fiziksel Cüzdan',
+              decoration: InputDecoration(
+                labelText: 'wallet_name_label'.tr(), // JSON'dan etiket
+                hintText: 'wallet_name_hint'.tr(),   // JSON'dan ipucu
               ),
             ),
           ],
@@ -38,7 +36,7 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
               _adController.clear();
               Navigator.of(ctx).pop();
             },
-            child: const Text('İptal'),
+            child: Text('button_cancel'.tr()), // JSON'dan İptal
           ),
           ElevatedButton(
             onPressed: () {
@@ -56,7 +54,7 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
               _adController.clear();
               Navigator.of(ctx).pop();
             },
-            child: const Text('Ekle'),
+            child: Text('button_add'.tr()), // JSON'dan Ekle
           ),
         ],
       ),
@@ -65,7 +63,7 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
 
   @override
   void dispose() {
-    _adController.dispose(); // Bellek sızıntısını önlemek için controller'ı kapatıyoruz
+    _adController.dispose();
     super.dispose();
   }
 
@@ -73,17 +71,30 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('💼 Kişisel Cüzdanlarım'),
+        title: Text('app_title'.tr()), // JSON'dan uygulama başlığı
         backgroundColor: Colors.blueGrey.shade800,
         foregroundColor: Colors.white,
         centerTitle: true,
+        actions: [
+          // Test etmek için sağ üste dil değiştirme butonu koyalım
+          IconButton(
+            icon: const Icon(Icons.language),
+            onPressed: () {
+              if (context.locale == const Locale('tr')) {
+                context.setLocale(const Locale('en'));
+              } else {
+                context.setLocale(const Locale('tr'));
+              }
+            },
+          ),
+        ],
       ),
       body: _cuzdanlar.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
-                'Henüz bir cüzdan eklemediniz.\nSağ alttaki butondan hemen ekleyin!',
+                'empty_wallets'.tr(), // JSON'dan boş ekran uyarısı
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
             )
           : ListView.builder(
@@ -104,7 +115,7 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
                     ),
                     leading: const CircleAvatar(
                       backgroundColor: Colors.blueGrey,
-                      child: Icon(Icons.account_balance_wallet, color: Colors.white),
+                      child: Icon(Icons.wallet, color: Colors.white),
                     ),
                     title: Text(
                       cuzdan.cuzdanAdi,
@@ -118,9 +129,6 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
                       size: 16,
                       color: Colors.grey,
                     ),
-                    onTap: () {
-                      // İleride tıklanınca varlık ekleme sayfasına gideceğiz
-                    },
                   ),
                 );
               },
