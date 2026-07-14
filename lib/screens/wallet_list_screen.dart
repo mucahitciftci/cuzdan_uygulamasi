@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart'; // Yeni import
-import '../models/cuzdan_model.dart';
+import 'package:easy_localization/easy_localization.dart';
+import '../models/wallet_model.dart';
 
-class CuzdanListesiEkrani extends StatefulWidget {
-  const CuzdanListesiEkrani({super.key});
+class WalletListScreen extends StatefulWidget {
+  const WalletListScreen({super.key});
 
   @override
-  State<CuzdanListesiEkrani> createState() => _CuzdanListesiEkraniState();
+  State<WalletListScreen> createState() => _WalletListScreenState();
 }
 
-class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
-  final List<Cuzdan> _cuzdanlar = [];
-  final TextEditingController _adController = TextEditingController();
+class _WalletListScreenState extends State<WalletListScreen> {
+  // English naming for state variables
+  final List<Wallet> _wallets = [];
+  final TextEditingController _nameController = TextEditingController();
 
-  void _cuzdanEklemeDialogGoster() {
+  // Shows the dialog to add a new wallet
+  void _showAddWalletDialog() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('dialog_title'.tr()), // JSON'dan çekilen başlık
+        title: Text('dialog_title'.tr()), // Localization key
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-              controller: _adController,
+              controller: _nameController,
               decoration: InputDecoration(
-                labelText: 'wallet_name_label'.tr(), // JSON'dan etiket
-                hintText: 'wallet_name_hint'.tr(),   // JSON'dan ipucu
+                labelText: 'wallet_name_label'.tr(),
+                hintText: 'wallet_name_hint'.tr(),
               ),
             ),
           ],
@@ -33,28 +35,28 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
         actions: [
           TextButton(
             onPressed: () {
-              _adController.clear();
+              _nameController.clear();
               Navigator.of(ctx).pop();
             },
-            child: Text('button_cancel'.tr()), // JSON'dan İptal
+            child: Text('button_cancel'.tr()),
           ),
           ElevatedButton(
             onPressed: () {
-              if (_adController.text.trim().isEmpty) return;
+              if (_nameController.text.trim().isEmpty) return;
               
               setState(() {
-                _cuzdanlar.add(
-                  Cuzdan(
+                _wallets.add(
+                  Wallet(
                     id: DateTime.now().toString(),
-                    cuzdanAdi: _adController.text.trim(),
+                    walletName: _nameController.text.trim(),
                   ),
                 );
               });
 
-              _adController.clear();
+              _nameController.clear();
               Navigator.of(ctx).pop();
             },
-            child: Text('button_add'.tr()), // JSON'dan Ekle
+            child: Text('button_add'.tr()),
           ),
         ],
       ),
@@ -63,7 +65,7 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
 
   @override
   void dispose() {
-    _adController.dispose();
+    _nameController.dispose(); // Prevents memory leaks
     super.dispose();
   }
 
@@ -71,12 +73,12 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('app_title'.tr()), // JSON'dan uygulama başlığı
+        title: Text('app_title'.tr()),
         backgroundColor: Colors.blueGrey.shade800,
         foregroundColor: Colors.white,
         centerTitle: true,
         actions: [
-          // Test etmek için sağ üste dil değiştirme butonu koyalım
+          // Language switcher button for testing
           IconButton(
             icon: const Icon(Icons.language),
             onPressed: () {
@@ -89,19 +91,19 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
           ),
         ],
       ),
-      body: _cuzdanlar.isEmpty
+      body: _wallets.isEmpty
           ? Center(
               child: Text(
-                'empty_wallets'.tr(), // JSON'dan boş ekran uyarısı
+                'empty_wallets'.tr(),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
             )
           : ListView.builder(
               padding: const EdgeInsets.all(15),
-              itemCount: _cuzdanlar.length,
+              itemCount: _wallets.length,
               itemBuilder: (context, index) {
-                final cuzdan = _cuzdanlar[index];
+                final wallet = _wallets[index];
                 return Card(
                   elevation: 3,
                   margin: const EdgeInsets.only(bottom: 12),
@@ -118,7 +120,7 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
                       child: Icon(Icons.wallet, color: Colors.white),
                     ),
                     title: Text(
-                      cuzdan.cuzdanAdi,
+                      wallet.walletName,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -134,7 +136,7 @@ class _CuzdanListesiEkraniState extends State<CuzdanListesiEkrani> {
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _cuzdanEklemeDialogGoster,
+        onPressed: _showAddWalletDialog,
         backgroundColor: Colors.blueGrey.shade800,
         child: const Icon(Icons.add, color: Colors.white),
       ),
