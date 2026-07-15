@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../models/wallet_model.dart';
@@ -13,28 +14,18 @@ class WalletDetailScreen extends StatefulWidget {
 }
 
 class _WalletDetailScreenState extends State<WalletDetailScreen> {
-  late List<Asset> _currentAssets;
-  final _assetNameController = TextEditingController();
+  final _nameController = TextEditingController();
   final _amountController = TextEditingController();
-  final _totalInvestedController = TextEditingController();
+  final _totalInvestedController = TextEditingController(); // Kullanıcının yatırdığı toplam tutar girdisi
+  String _selectedUnitType = 'piece';
 
-  String _selectedUnitType = 'unit_type_gram';
-
-  @override
-  void initState() {
-    super.initState();
-    _currentAssets = List.from(widget.wallet.assets);
-  }
-
+  // Modelindeki totalValue getter'ını kullanarak toplam bakiyeyi dinamik hesaplıyoruz
   double get _totalBalance {
-    return _currentAssets.fold(0.0, (sum, asset) => sum + asset.totalValue);
-  }
-
-  String get _currencySym {
-    if (widget.wallet.currencySymbol == 'g') {
-      return ' gr';
+    double total = 0;
+    for (var asset in widget.wallet.assets) {
+      total += asset.totalValue; 
     }
-    return widget.wallet.currencySymbol;
+    return total;
   }
 
   void _showAddAssetDialog() {
@@ -42,39 +33,89 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text('dialog_add_asset_title'.tr()),
+          backgroundColor: Colors.blueGrey.shade900.withValues(alpha: 0.95),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.15)), // HATA DÜZELTİLDİ: border yerine side kullanıldı
+          ),
+          title: Text(
+            'dialog_add_asset_title'.tr(),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  controller: _assetNameController,
+                  controller: _nameController,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'asset_name_label'.tr(), 
-                    hintText: 'asset_name_hint'.tr()
+                    labelText: 'asset_name_label'.tr(),
+                    labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                    hintText: 'asset_name_hint'.tr(),
+                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.tealAccent),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 15),
                 TextField(
                   controller: _amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'amount_label'.tr(), 
-                    hintText: 'amount_hint'.tr()
+                    labelText: 'amount_label'.tr(),
+                    labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                    hintText: 'amount_hint'.tr(),
+                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.tealAccent),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: _totalInvestedController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'total_invested_label'.tr(),
+                    labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                    hintText: 'total_invested_hint'.tr(),
+                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.tealAccent),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
                 DropdownButtonFormField<String>(
                   initialValue: _selectedUnitType,
+                  dropdownColor: Colors.blueGrey.shade900,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'unit_type_label'.tr(),
+                    labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                    ),
                   ),
                   items: [
-                    DropdownMenuItem(value: 'unit_type_gram', child: Text('unit_type_gram'.tr())),
-                    DropdownMenuItem(value: 'unit_type_piece', child: Text('unit_type_piece'.tr())),
-                    DropdownMenuItem(value: 'unit_type_half', child: Text('unit_type_half'.tr())),
-                    DropdownMenuItem(value: 'unit_type_quarter', child: Text('unit_type_quarter'.tr())),
-                    DropdownMenuItem(value: 'unit_type_lot', child: Text('unit_type_lot'.tr())),
+                    DropdownMenuItem(value: 'piece', child: Text('unit_type_piece'.tr(), style: const TextStyle(color: Colors.white))),
+                    DropdownMenuItem(value: 'gram', child: Text('unit_type_gram'.tr(), style: const TextStyle(color: Colors.white))),
+                    DropdownMenuItem(value: 'lot', child: Text('unit_type_lot'.tr(), style: const TextStyle(color: Colors.white))),
+                    DropdownMenuItem(value: 'quarter', child: Text('unit_type_quarter'.tr(), style: const TextStyle(color: Colors.white))),
+                    DropdownMenuItem(value: 'half', child: Text('unit_type_half'.tr(), style: const TextStyle(color: Colors.white))),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -83,15 +124,6 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                       });
                     }
                   },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _totalInvestedController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: '${'total_invested_label'.tr()} ($_currencySym)', 
-                    hintText: 'total_invested_hint'.tr()
-                  ),
                 ),
               ],
             ),
@@ -102,42 +134,40 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                 _clearControllers();
                 Navigator.of(ctx).pop();
               },
-              child: Text('button_cancel'.tr()),
+              child: Text('button_cancel'.tr(), style: TextStyle(color: Colors.tealAccent.shade400)),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.tealAccent.shade400,
+                foregroundColor: Colors.blueGrey.shade900,
+              ),
               onPressed: () {
-                final name = _assetNameController.text.trim();
-                final amt = double.tryParse(_amountController.text.trim()) ?? 0.0;
-                final totalInvested = double.tryParse(_totalInvestedController.text.trim()) ?? 0.0;
+                final name = _nameController.text.trim();
+                final amount = double.tryParse(_amountController.text) ?? 0.0;
+                final totalInvested = double.tryParse(_totalInvestedController.text) ?? 0.0;
 
-                if (name.isEmpty || amt <= 0 || totalInvested <= 0) return;
+                if (name.isEmpty || amount <= 0 || totalInvested <= 0) return;
 
-                final calculatedUnitPrice = totalInvested / amt;
-
-                final generatedSymbol = name.length >= 2 
-                    ? name.substring(0, 2).toUpperCase() 
-                    : name.toUpperCase();
+                // HATA DÜZELTİLDİ: Birim fiyatı dinamik olarak hesaplıyoruz
+                final calculatedUnitPrice = totalInvested / amount;
 
                 setState(() {
-                  _currentAssets.add(
+                  widget.wallet.assets.add(
                     Asset(
                       id: DateTime.now().toString(),
                       assetName: name,
-                      symbol: generatedSymbol,
-                      amount: amt,
-                      unitType: _selectedUnitType.tr(),
-                      unitPrice: calculatedUnitPrice,
+                      amount: amount,
+                      symbol: widget.wallet.currencySymbol, // HATA DÜZELTİLDİ: symbol cüzdandan aktarıldı
+                      unitType: _selectedUnitType,
+                      unitPrice: calculatedUnitPrice, // HATA DÜZELTİLDİ: unitPrice parametresi eklendi
                     ),
                   );
                 });
 
-                widget.wallet.assets.clear();
-                widget.wallet.assets.addAll(_currentAssets);
-
                 _clearControllers();
                 Navigator.of(ctx).pop();
               },
-              child: Text('button_add'.tr()),
+              child: Text('button_add'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -149,25 +179,33 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('delete_asset_title'.tr()),
-        content: Text('delete_asset_message'.tr(args: [_currentAssets[index].assetName])),
+        backgroundColor: Colors.blueGrey.shade900.withValues(alpha: 0.95),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.15)), // HATA DÜZELTİLDİ: border yerine side kullanıldı
+        ),
+        title: Text(
+          'delete_asset_title'.tr(),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'delete_asset_message'.tr(args: [widget.wallet.assets[index].assetName]),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('button_cancel'.tr()),
+            child: Text('button_cancel'.tr(), style: TextStyle(color: Colors.tealAccent.shade400)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () {
               setState(() {
-                _currentAssets.removeAt(index);
+                widget.wallet.assets.removeAt(index);
               });
-              widget.wallet.assets.clear();
-              widget.wallet.assets.addAll(_currentAssets);
-              
               Navigator.of(ctx).pop();
             },
-            child: Text('button_delete'.tr(), style: const TextStyle(color: Colors.white)),
+            child: Text('button_delete'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -175,15 +213,15 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
   }
 
   void _clearControllers() {
-    _assetNameController.clear();
+    _nameController.clear();
     _amountController.clear();
     _totalInvestedController.clear();
-    _selectedUnitType = 'unit_type_gram';
+    _selectedUnitType = 'piece';
   }
 
   @override
   void dispose() {
-    _assetNameController.dispose();
+    _nameController.dispose();
     _amountController.dispose();
     _totalInvestedController.dispose();
     super.dispose();
@@ -191,133 +229,196 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isGold = widget.wallet.currencySymbol == 'g';
-
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(widget.wallet.walletName),
-        backgroundColor: Colors.blueGrey.shade800,
-        foregroundColor: Colors.white,
+        title: Text(
+          widget.wallet.walletName,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.blueGrey.shade900,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'total_balance'.tr(),
-                    style: const TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    isGold 
-                        ? '${_totalBalance.toStringAsFixed(2)} gr'
-                        : '$_currencySym${_totalBalance.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.blueGrey.shade900,
+              Colors.blueGrey.shade800,
+              Colors.indigo.shade900,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // --- TOP BAKIYE KARTI (Cam Efektli) ---
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'total_balance'.tr(),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.6),
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            '${_totalBalance.toStringAsFixed(2)} ${widget.wallet.currencySymbol == 'g' ? 'Gr' : widget.wallet.currencySymbol}',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.tealAccent.shade400,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'my_assets_title'.tr(),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: _currentAssets.isEmpty
-                  ? Center(
-                      child: Text(
-                        'no_assets_yet'.tr(),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 16, color: Colors.grey),
+
+              // --- VARLIKLARIM BASLIGI ---
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
+                child: Row(
+                  children: [
+                    const Icon(Icons.trending_up, color: Colors.tealAccent, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'my_assets_title'.tr(),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                    )
-                  : ListView.builder(
-                      itemCount: _currentAssets.length,
-                      itemBuilder: (context, index) {
-                        final asset = _currentAssets[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          elevation: 2,
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.blueGrey.shade100,
-                              child: Text(
-                                asset.symbol,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: Colors.blueGrey,
+                    ),
+                  ],
+                ),
+              ),
+
+              // --- VARLIK LISTESI ---
+              Expanded(
+                child: widget.wallet.assets.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.pie_chart_outline_outlined,
+                              size: 64,
+                              color: Colors.white.withValues(alpha: 0.4),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'no_assets_yet'.tr(),
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        itemCount: widget.wallet.assets.length,
+                        itemBuilder: (context, index) {
+                          final asset = widget.wallet.assets[index];
+
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.1),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                                  title: Text(
+                                    asset.assetName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 6.0),
+                                    child: Text(
+                                      '${'unit_label'.tr()}: ${asset.amount} | ${'calculated_unit_price_label'.tr()}: ${asset.unitPrice.toStringAsFixed(2)} ${widget.wallet.currencySymbol}',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.5),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // HATA DÜZELTİLDİ: asset.totalValue kullanıldı
+                                      Text(
+                                        '${asset.totalValue.toStringAsFixed(2)} ${widget.wallet.currencySymbol == 'g' ? 'Gr' : widget.wallet.currencySymbol}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: Colors.tealAccent.shade400,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 22),
+                                        onPressed: () => _confirmDeleteAsset(index),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                            title: Text(
-                              asset.assetName,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                              '${'unit_label'.tr()}: ${asset.amount} ${asset.unitType}\n'
-                              '${'calculated_unit_price_label'.tr()}: ${isGold ? "${asset.unitPrice.toStringAsFixed(2)} gr" : "$_currencySym${asset.unitPrice.toStringAsFixed(2)}"}',
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      isGold
-                                          ? '${asset.totalValue.toStringAsFixed(2)} gr'
-                                          : '$_currencySym${asset.totalValue.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                                  onPressed: () => _confirmDeleteAsset(index),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddAssetDialog,
-        backgroundColor: Colors.blueGrey.shade800,
-        child: const Icon(Icons.add_chart, color: Colors.white),
+        backgroundColor: Colors.tealAccent.shade400,
+        child: Icon(Icons.add, color: Colors.blueGrey.shade900),
       ),
     );
   }

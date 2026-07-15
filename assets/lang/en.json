@@ -1,5 +1,5 @@
 {
-  "app_title": "My Personal Wallets",
+  "app_title": "{}'s Wallets",
   "empty_wallets": "You haven't added a wallet yet.\nAdd one now using the button below!",
   "dialog_title": "Create New Wallet",
   "wallet_name_label": "Wallet Name",
@@ -29,5 +29,22 @@
   "delete_wallet_title": "Delete Wallet",
   "delete_wallet_message": "Are you sure you want to delete the wallet {} and all of its assets?",
   "delete_asset_title": "Delete Asset",
-  "delete_asset_message": "Are you sure you want to delete the asset {}?"
+  "delete_asset_message": "Are you sure you want to delete the asset {}?",
+  "login_title": "Login",
+  "signup_title": "Sign Up",
+  "login_subtitle": "Enter your information to access your wallets",
+  "signup_subtitle": "Enter your details to get started immediately",
+  "label_name": "Name",
+  "label_email": "Email",
+  "label_password": "Password",
+  "btn_login": "LOGIN",
+  "btn_signup": "SIGN UP",
+  "switch_to_signup": "Don't have an account? Sign Up now",
+  "switch_to_login": "Already have an account? Login",
+  "error_all_fields": "Please fill in all fields.",
+  "error_name_empty": "Please enter your name.",
+  "error_auth_failed": "Incorrect email or password!",
+  "signup_success": "Registration successful! You can login now.",
+  "error_title": "Error",
+  "btn_ok": "OK"
 }

@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import './screens/wallet_list_screen.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'screens/login_screen.dart'; // Bir sonraki adımda oluşturacağız
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+  
+  // Hive Veritabanını başlatıyoruz
+  await Hive.initFlutter();
+  
+  // Kullanıcı bilgileri ve uygulama ayarlarını tutacağımız bir 'box' (kutu/tablo) açıyoruz
+  await Hive.openBox('auth_box');
 
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('tr')],
       path: 'assets/lang',
-      fallbackLocale: const Locale('en'),
+      fallbackLocale: const Locale('tr'),
       child: const PersonalWalletApp(),
     ),
   );
@@ -31,7 +38,8 @@ class PersonalWalletApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
       ),
-      home: const WalletListScreen(),
+      // İlk ekranımız artık Giriş Ekranı olacak!
+      home: const LoginScreen(),
     );
   }
 }
