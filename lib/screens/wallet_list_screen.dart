@@ -13,50 +13,101 @@ class WalletListScreen extends StatefulWidget {
 class _WalletListScreenState extends State<WalletListScreen> {
   final List<Wallet> _wallets = [];
   final TextEditingController _nameController = TextEditingController();
+  String _selectedCurrency = '₺';
 
   void _showAddWalletDialog() {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('dialog_title'.tr()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'wallet_name_label'.tr(),
-                hintText: 'wallet_name_hint'.tr(),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('dialog_title'.tr()),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'wallet_name_label'.tr(),
+                  hintText: 'wallet_name_hint'.tr(),
+                ),
               ),
+              const SizedBox(height: 15),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedCurrency,
+                decoration: InputDecoration(
+                  labelText: 'currency_label'.tr(),
+                ),
+                items: [
+                  DropdownMenuItem(value: '₺', child: Text('Türk Lirası (₺)')),
+                  DropdownMenuItem(value: '\$', child: Text('US Dollar (\$)')),
+                  DropdownMenuItem(value: '€', child: Text('Euro (€)')),
+                  DropdownMenuItem(value: 'g', child: Text('Altın (g)')),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() {
+                      _selectedCurrency = value;
+                    });
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _nameController.clear();
+                Navigator.of(ctx).pop();
+              },
+              child: Text('button_cancel'.tr()),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (_nameController.text.trim().isEmpty) return;
+                
+                setState(() {
+                  _wallets.add(
+                    Wallet(
+                      id: DateTime.now().toString(),
+                      walletName: _nameController.text.trim(),
+                      currencySymbol: _selectedCurrency,
+                      assets: [],
+                    ),
+                  );
+                });
+
+                _nameController.clear();
+                _selectedCurrency = '₺';
+                Navigator.of(ctx).pop();
+              },
+              child: Text('button_add'.tr()),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _confirmDeleteWallet(int index) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('delete_wallet_title'.tr()),
+        content: Text('delete_wallet_message'.tr(args: [_wallets[index].walletName])),
         actions: [
           TextButton(
-            onPressed: () {
-              _nameController.clear();
-              Navigator.of(ctx).pop();
-            },
+            onPressed: () => Navigator.of(ctx).pop(),
             child: Text('button_cancel'.tr()),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
-              if (_nameController.text.trim().isEmpty) return;
-              
               setState(() {
-                _wallets.add(
-                  Wallet(
-                    id: DateTime.now().toString(),
-                    walletName: _nameController.text.trim(),
-                    assets: [],
-                  ),
-                );
+                _wallets.removeAt(index);
               });
-
-              _nameController.clear();
               Navigator.of(ctx).pop();
             },
-            child: Text('button_add'.tr()),
+            child: Text('button_delete'.tr(), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -110,13 +161,13 @@ class _WalletListScreenState extends State<WalletListScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    leading: const CircleAvatar(
+                    contentPadding: const EdgeInsets.only(left: 20, right: 10, top: 5, bottom: 5),
+                    leading: CircleAvatar(
                       backgroundColor: Colors.blueGrey,
-                      child: Icon(Icons.wallet, color: Colors.white),
+                      child: Text(
+                        wallet.currencySymbol == 'g' ? 'Au' : wallet.currencySymbol,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
                     ),
                     title: Text(
                       wallet.walletName,
@@ -125,10 +176,19 @@ class _WalletListScreenState extends State<WalletListScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    trailing: const Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: Colors.grey,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                          onPressed: () => _confirmDeleteWallet(index),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
                     onTap: () {
                       Navigator.of(context).push(

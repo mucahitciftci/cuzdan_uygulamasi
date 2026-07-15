@@ -15,9 +15,10 @@ class WalletDetailScreen extends StatefulWidget {
 class _WalletDetailScreenState extends State<WalletDetailScreen> {
   late List<Asset> _currentAssets;
   final _assetNameController = TextEditingController();
-  final _symbolController = TextEditingController();
   final _amountController = TextEditingController();
-  final _unitPriceController = TextEditingController();
+  final _totalInvestedController = TextEditingController();
+
+  String _selectedUnitType = 'unit_type_gram';
 
   @override
   void initState() {
@@ -25,74 +26,148 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
     _currentAssets = List.from(widget.wallet.assets);
   }
 
-  // Calculates the total balance of the wallet dynamically
   double get _totalBalance {
     return _currentAssets.fold(0.0, (sum, asset) => sum + asset.totalValue);
+  }
+
+  String get _currencySym {
+    if (widget.wallet.currencySymbol == 'g') {
+      return ' gr';
+    }
+    return widget.wallet.currencySymbol;
   }
 
   void _showAddAssetDialog() {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('dialog_add_asset_title'.tr()),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _assetNameController,
-                decoration: InputDecoration(labelText: 'asset_name_label'.tr(), hintText: 'asset_name_hint'.tr()),
-              ),
-              TextField(
-                controller: _symbolController,
-                decoration: InputDecoration(labelText: 'symbol_label'.tr(), hintText: 'symbol_hint'.tr()),
-              ),
-              TextField(
-                controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: 'amount_label'.tr(), hintText: 'amount_hint'.tr()),
-              ),
-              TextField(
-                controller: _unitPriceController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: 'unit_price_label'.tr(), hintText: 'unit_price_hint'.tr()),
-              ),
-            ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('dialog_add_asset_title'.tr()),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _assetNameController,
+                  decoration: InputDecoration(
+                    labelText: 'asset_name_label'.tr(), 
+                    hintText: 'asset_name_hint'.tr()
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'amount_label'.tr(), 
+                    hintText: 'amount_hint'.tr()
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedUnitType,
+                  decoration: InputDecoration(
+                    labelText: 'unit_type_label'.tr(),
+                  ),
+                  items: [
+                    DropdownMenuItem(value: 'unit_type_gram', child: Text('unit_type_gram'.tr())),
+                    DropdownMenuItem(value: 'unit_type_piece', child: Text('unit_type_piece'.tr())),
+                    DropdownMenuItem(value: 'unit_type_half', child: Text('unit_type_half'.tr())),
+                    DropdownMenuItem(value: 'unit_type_quarter', child: Text('unit_type_quarter'.tr())),
+                    DropdownMenuItem(value: 'unit_type_lot', child: Text('unit_type_lot'.tr())),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setDialogState(() {
+                        _selectedUnitType = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _totalInvestedController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: '${'total_invested_label'.tr()} ($_currencySym)', 
+                    hintText: 'total_invested_hint'.tr()
+                  ),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _clearControllers();
+                Navigator.of(ctx).pop();
+              },
+              child: Text('button_cancel'.tr()),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = _assetNameController.text.trim();
+                final amt = double.tryParse(_amountController.text.trim()) ?? 0.0;
+                final totalInvested = double.tryParse(_totalInvestedController.text.trim()) ?? 0.0;
+
+                if (name.isEmpty || amt <= 0 || totalInvested <= 0) return;
+
+                final calculatedUnitPrice = totalInvested / amt;
+
+                final generatedSymbol = name.length >= 2 
+                    ? name.substring(0, 2).toUpperCase() 
+                    : name.toUpperCase();
+
+                setState(() {
+                  _currentAssets.add(
+                    Asset(
+                      id: DateTime.now().toString(),
+                      assetName: name,
+                      symbol: generatedSymbol,
+                      amount: amt,
+                      unitType: _selectedUnitType.tr(),
+                      unitPrice: calculatedUnitPrice,
+                    ),
+                  );
+                });
+
+                widget.wallet.assets.clear();
+                widget.wallet.assets.addAll(_currentAssets);
+
+                _clearControllers();
+                Navigator.of(ctx).pop();
+              },
+              child: Text('button_add'.tr()),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  void _confirmDeleteAsset(int index) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('delete_asset_title'.tr()),
+        content: Text('delete_asset_message'.tr(args: [_currentAssets[index].assetName])),
         actions: [
           TextButton(
-            onPressed: () {
-              _clearControllers();
-              Navigator.of(ctx).pop();
-            },
+            onPressed: () => Navigator.of(ctx).pop(),
             child: Text('button_cancel'.tr()),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
-              final name = _assetNameController.text.trim();
-              final sym = _symbolController.text.trim().toUpperCase();
-              final amt = double.tryParse(_amountController.text.trim()) ?? 0.0;
-              final price = double.tryParse(_unitPriceController.text.trim()) ?? 0.0;
-
-              if (name.isEmpty || sym.isEmpty || amt <= 0 || price <= 0) return;
-
               setState(() {
-                _currentAssets.add(
-                  Asset(
-                    id: DateTime.now().toString(),
-                    assetName: name,
-                    symbol: sym,
-                    amount: amt,
-                    unitPrice: price,
-                  ),
-                );
+                _currentAssets.removeAt(index);
               });
-
-              _clearControllers();
+              widget.wallet.assets.clear();
+              widget.wallet.assets.addAll(_currentAssets);
+              
               Navigator.of(ctx).pop();
             },
-            child: Text('button_add'.tr()),
+            child: Text('button_delete'.tr(), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -101,22 +176,23 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
 
   void _clearControllers() {
     _assetNameController.clear();
-    _symbolController.clear();
     _amountController.clear();
-    _unitPriceController.clear();
+    _totalInvestedController.clear();
+    _selectedUnitType = 'unit_type_gram';
   }
 
   @override
   void dispose() {
     _assetNameController.dispose();
-    _symbolController.dispose();
     _amountController.dispose();
-    _unitPriceController.dispose();
+    _totalInvestedController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isGold = widget.wallet.currencySymbol == 'g';
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.wallet.walletName),
@@ -129,7 +205,6 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Total Balance Card (Row & Column Layout!)
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -152,7 +227,9 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '\$${_totalBalance.toStringAsFixed(2)}',
+                    isGold 
+                        ? '${_totalBalance.toStringAsFixed(2)} gr'
+                        : '$_currencySym${_totalBalance.toStringAsFixed(2)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 28,
@@ -163,13 +240,11 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            // Assets List Title
             Text(
               'my_assets_title'.tr(),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            // Assets List Area
             Expanded(
               child: _currentAssets.isEmpty
                   ? Center(
@@ -203,14 +278,33 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             subtitle: Text(
-                              '${'unit_label'.tr()}: ${asset.amount} | \$${asset.unitPrice.toStringAsFixed(2)}',
+                              '${'unit_label'.tr()}: ${asset.amount} ${asset.unitType}\n'
+                              '${'calculated_unit_price_label'.tr()}: ${isGold ? "${asset.unitPrice.toStringAsFixed(2)} gr" : "$_currencySym${asset.unitPrice.toStringAsFixed(2)}"}',
                             ),
-                            trailing: Text(
-                              '\$${asset.totalValue.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      isGold
+                                          ? '${asset.totalValue.toStringAsFixed(2)} gr'
+                                          : '$_currencySym${asset.totalValue.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                  onPressed: () => _confirmDeleteAsset(index),
+                                ),
+                              ],
                             ),
                           ),
                         );
