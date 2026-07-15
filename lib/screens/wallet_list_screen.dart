@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../models/wallet_model.dart';
+import 'wallet_detail_screen.dart';
 
 class WalletListScreen extends StatefulWidget {
   const WalletListScreen({super.key});
@@ -10,16 +11,14 @@ class WalletListScreen extends StatefulWidget {
 }
 
 class _WalletListScreenState extends State<WalletListScreen> {
-  // English naming for state variables
   final List<Wallet> _wallets = [];
   final TextEditingController _nameController = TextEditingController();
 
-  // Shows the dialog to add a new wallet
   void _showAddWalletDialog() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('dialog_title'.tr()), // Localization key
+        title: Text('dialog_title'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -49,6 +48,7 @@ class _WalletListScreenState extends State<WalletListScreen> {
                   Wallet(
                     id: DateTime.now().toString(),
                     walletName: _nameController.text.trim(),
+                    assets: [],
                   ),
                 );
               });
@@ -65,7 +65,7 @@ class _WalletListScreenState extends State<WalletListScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose(); // Prevents memory leaks
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -78,7 +78,6 @@ class _WalletListScreenState extends State<WalletListScreen> {
         foregroundColor: Colors.white,
         centerTitle: true,
         actions: [
-          // Language switcher button for testing
           IconButton(
             icon: const Icon(Icons.language),
             onPressed: () {
@@ -131,6 +130,13 @@ class _WalletListScreenState extends State<WalletListScreen> {
                       size: 16,
                       color: Colors.grey,
                     ),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => WalletDetailScreen(wallet: wallet),
+                        ),
+                      );
+                    },
                   ),
                 );
               },

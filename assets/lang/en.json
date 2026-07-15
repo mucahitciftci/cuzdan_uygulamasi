@@ -5,5 +5,18 @@
     "wallet_name_label": "Wallet Name",
     "wallet_name_hint": "e.g., Salary Account, Cash",
     "button_cancel": "Cancel",
-    "button_add": "Add"
+    "button_add": "Add",
+    "total_balance": "Total Balance",
+    "no_assets_yet": "No assets in this wallet yet.",
+    "my_assets_title": "My Assets",
+    "dialog_add_asset_title": "Add New Asset",
+    "asset_name_label": "Asset Name",
+    "asset_name_hint": "e.g., US Dollar, Bitcoin",
+    "symbol_label": "Symbol",
+    "symbol_hint": "e.g., USD, BTC, TSLA",
+    "amount_label": "Unit (Amount)",
+    "amount_hint": "e.g., 100 or 0.5",
+    "unit_price_label": "Unit Price ($)",
+    "unit_price_hint": "Purchase price per unit",
+    "unit_label": "Unit"
   }

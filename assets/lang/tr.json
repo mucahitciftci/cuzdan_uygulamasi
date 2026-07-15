@@ -5,5 +5,18 @@
     "wallet_name_label": "Cüzdan Adı",
     "wallet_name_hint": "Örn: Maaş Hesabı, Birikim",
     "button_cancel": "İptal",
-    "button_add": "Ekle"
+    "button_add": "Ekle",
+    "total_balance": "Toplam Bakiye",
+    "no_assets_yet": "Bu cüzdanda henüz bir varlık yok.",
+    "my_assets_title": "Varlıklarım",
+    "dialog_add_asset_title": "Yeni Varlık Ekle",
+    "asset_name_label": "Varlık Adı",
+    "asset_name_hint": "Örn: Amerikan Doları, Bitcoin",
+    "symbol_label": "Sembol",
+    "symbol_hint": "Örn: USD, BTC, THYAO",
+    "amount_label": "Birim (Miktar)",
+    "amount_hint": "Örn: 100 veya 0.5",
+    "unit_price_label": "Birim Fiyatı ($)",
+    "unit_price_hint": "Birim başına alış fiyatı",
+    "unit_label": "Birim"
   }
