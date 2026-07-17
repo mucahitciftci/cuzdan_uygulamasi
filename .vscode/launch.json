@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Cüzdan Uygulaması (Sabit Port)",
+        "request": "launch",
+        "type": "dart",
+        "args": [
+          "-d",
+          "chrome",
+          "--web-port=8080"
+        ]
+      }
+    ]
+  }

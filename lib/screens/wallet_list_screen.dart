@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../models/wallet_model.dart';
 import '../theme/app_theme.dart';
 import 'wallet_detail_screen.dart';
@@ -18,45 +17,26 @@ class WalletListScreen extends StatefulWidget {
 }
 
 class _WalletListScreenState extends State<WalletListScreen> {
-  final List<Wallet> _wallets = [];
   final TextEditingController _nameController = TextEditingController();
   
-  // Hardcode anahtar kullanımı engellemek için statik sabit tanımlandı
-  static const String _storageKey = 'saved_wallets';
-  static const String _defaultCurrency = '₺';
+  // --- HARDCODE ENGELLEMEK İÇİN STATİK SABİTLER ---
+  static const String _boxWalletsName = 'wallets_box';
+  static const String _currencyTry = '₺';
+  static const String _currencyUsd = '\$';
+  static const String _currencyEur = '€';
+  static const String _currencyGold = 'g';
   
-  String _selectedCurrency = _defaultCurrency;
+  // Dil ve etiket sabitleri
+  static const String _keyLangTr = 'tr';
+  static const String _keyLangEn = 'en';
+  static const String _labelTry = 'Türk Lirası (₺)';
+  static const String _labelUsd = 'US Dollar (\$)';
+  static const String _labelEur = 'Euro (€)';
+  static const String _labelGold = 'Altın (g)';
+  static const String _textGoldSymbol = 'Au';
 
-  @override
-  void initState() {
-    super.initState();
-    _loadWallets();
-  }
-
-  // --- HAFIZADAN CÜZDANLARI YÜKLEME ---
-  void _loadWallets() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? walletsJson = prefs.getString(_storageKey); // Sabit kullanıldı
-    
-    if (walletsJson != null) {
-      final List<dynamic> decodedList = jsonDecode(walletsJson);
-      setState(() {
-        _wallets.clear();
-        _wallets.addAll(
-          decodedList.map((item) => Wallet.fromJson(item as Map<String, dynamic>)).toList()
-        );
-      });
-    }
-  }
-
-  // --- HAFIZAYA CÜZDANLARI KAYDETME ---
-  void _saveWallets() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String encodedData = jsonEncode(
-      _wallets.map((wallet) => wallet.toJson()).toList()
-    );
-    await prefs.setString(_storageKey, encodedData); // Sabit kullanıldı
-  }
+  final Box<Wallet> _walletBox = Hive.box<Wallet>(_boxWalletsName);
+  String _selectedCurrency = _currencyTry;
 
   void _showAddWalletDialog() {
     final theme = Theme.of(context);
@@ -112,10 +92,10 @@ class _WalletListScreenState extends State<WalletListScreen> {
                   ),
                 ),
                 items: [
-                  DropdownMenuItem(value: '₺', child: Text('Türk Lirası (₺)', style: TextStyle(color: textColor))),
-                  DropdownMenuItem(value: '\$', child: Text('US Dollar (\$)', style: TextStyle(color: textColor))),
-                  DropdownMenuItem(value: '€', child: Text('Euro (€)', style: TextStyle(color: textColor))),
-                  DropdownMenuItem(value: 'g', child: Text('Altın (g)', style: TextStyle(color: textColor))),
+                  DropdownMenuItem(value: _currencyTry, child: Text(_labelTry, style: TextStyle(color: textColor))),
+                  DropdownMenuItem(value: _currencyUsd, child: Text(_labelUsd, style: TextStyle(color: textColor))),
+                  DropdownMenuItem(value: _currencyEur, child: Text(_labelEur, style: TextStyle(color: textColor))),
+                  DropdownMenuItem(value: _currencyGold, child: Text(_labelGold, style: TextStyle(color: textColor))),
                 ],
                 onChanged: (value) {
                   if (value != null) {
@@ -140,23 +120,24 @@ class _WalletListScreenState extends State<WalletListScreen> {
                 backgroundColor: theme.primaryColor,
                 foregroundColor: isDark ? Colors.blueGrey.shade900 : Colors.white,
               ),
-              onPressed: () {
+              onPressed: () async {
                 if (_nameController.text.trim().isEmpty) return;
                 
-                setState(() {
-                  _wallets.add(
-                    Wallet(
-                      id: DateTime.now().toString(),
-                      walletName: _nameController.text.trim(),
-                      currencySymbol: _selectedCurrency,
-                      assets: [],
-                    ),
-                  );
-                });
+                final newWallet = Wallet(
+                  id: DateTime.now().toString(),
+                  walletName: _nameController.text.trim(),
+                  currencySymbol: _selectedCurrency,
+                  assets: [],
+                );
 
-                _saveWallets();
+                await _walletBox.add(newWallet);
+                await _walletBox.flush();
+
                 _nameController.clear();
-                _selectedCurrency = _defaultCurrency; // Sabit kullanıldı
+                _selectedCurrency = _currencyTry;
+                
+                // BuildContext asenkron işlemden sonra kullanılmadan önce mounted kontrolü yapılıyor
+                if (!context.mounted) return;
                 Navigator.of(ctx).pop();
               },
               child: Text('button_add'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -186,7 +167,7 @@ class _WalletListScreenState extends State<WalletListScreen> {
           style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
         ),
         content: Text(
-          'delete_wallet_message'.tr(args: [_wallets[index].walletName]),
+          'delete_wallet_message'.tr(args: [_walletBox.getAt(index)!.walletName]),
           style: TextStyle(color: textColor.withValues(alpha: 0.8)),
         ),
         actions: [
@@ -199,11 +180,11 @@ class _WalletListScreenState extends State<WalletListScreen> {
               backgroundColor: theme.colorScheme.error,
               foregroundColor: theme.colorScheme.onError,
             ),
-            onPressed: () {
-              setState(() {
-                _wallets.removeAt(index);
-              });
-              _saveWallets();
+            onPressed: () async {
+              await _walletBox.deleteAt(index);
+              await _walletBox.flush();
+              
+              if (!context.mounted) return;
               Navigator.of(ctx).pop();
             },
             child: Text('button_delete'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -230,179 +211,181 @@ class _WalletListScreenState extends State<WalletListScreen> {
         ? [Colors.blueGrey.shade900, Colors.blueGrey.shade700, Colors.teal.shade900]
         : [Colors.teal.shade50, Colors.blueGrey.shade50, Colors.white];
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: AppBar(
-              title: Text(
-                'app_title'.tr(args: [widget.username]),
-                style: TextStyle(
-                  fontWeight: FontWeight.bold, 
-                  letterSpacing: 1.2,
-                  color: textColor,
-                  fontSize: 20,
-                ),
-              ),
-              backgroundColor: textColor.withValues(alpha: 0.05),
-              elevation: 0,
-              centerTitle: true,
-              shape: Border(
-                bottom: BorderSide(
-                  color: textColor.withValues(alpha: 0.1),
-                  width: 1,
-                ),
-              ),
-              actions: [
-                IconButton(
-                  icon: Icon(
-                    isDark ? Icons.dark_mode : Icons.light_mode,
-                    color: textColor,
+    return ValueListenableBuilder(
+      valueListenable: _walletBox.listenable(),
+      builder: (context, Box<Wallet> box, _) {
+        final wallets = box.values.toList();
+
+        return Scaffold(
+          extendBodyBehindAppBar: true,
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(70),
+            child: ClipRRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: AppBar(
+                  title: Text(
+                    'app_title'.tr(args: [widget.username]),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold, 
+                      letterSpacing: 1.2,
+                      color: textColor,
+                      fontSize: 20,
+                    ),
                   ),
-                  tooltip: isDark ? 'Koyu Tema / Dark Theme' : 'Açık Tema / Light Theme',
-                  onPressed: () {
-                    setState(() {
-                      AppTheme.toggleTheme();
-                    });
-                  },
+                  backgroundColor: textColor.withValues(alpha: 0.05),
+                  elevation: 0,
+                  centerTitle: true,
+                  shape: Border(
+                    bottom: BorderSide(
+                      color: textColor.withValues(alpha: 0.1),
+                      width: 1,
+                    ),
+                  ),
+                  actions: [
+                    IconButton(
+                      icon: Icon(
+                        isDark ? Icons.dark_mode : Icons.light_mode,
+                        color: textColor,
+                      ),
+                      tooltip: isDark ? 'Koyu Tema / Dark Theme' : 'Açık Tema / Light Theme',
+                      onPressed: () {
+                        setState(() {
+                          AppTheme.toggleTheme();
+                        });
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.language, color: textColor),
+                      onPressed: () {
+                        if (context.locale == const Locale(_keyLangTr)) {
+                          context.setLocale(const Locale(_keyLangEn));
+                        } else {
+                          context.setLocale(const Locale(_keyLangTr));
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.logout, color: textColor),
+                      onPressed: () {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: Icon(Icons.language, color: textColor),
-                  onPressed: () {
-                    if (context.locale == const Locale('tr')) {
-                      context.setLocale(const Locale('en'));
-                    } else {
-                      context.setLocale(const Locale('tr'));
-                    }
-                  },
-                ),
-                IconButton(
-                  icon: Icon(Icons.logout, color: textColor),
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    );
-                  },
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: gradientColors,
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: gradientColors,
+              ),
+            ),
+            child: SafeArea(
+              child: wallets.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.account_balance_wallet_outlined,
+                            size: 80,
+                            color: primaryColor.withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'empty_wallets'.tr(),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16, 
+                              color: textColor.withValues(alpha: 0.6),
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      )
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      itemCount: wallets.length,
+                      itemBuilder: (context, index) {
+                        final wallet = wallets[index];
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 15),
+                              decoration: BoxDecoration(
+                                color: textColor.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: textColor.withValues(alpha: 0.12),
+                                  width: 1,
+                                ),
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                leading: CircleAvatar(
+                                  backgroundColor: primaryColor.withValues(alpha: 0.2),
+                                  child: Text(
+                                    wallet.currencySymbol == _currencyGold ? _textGoldSymbol : wallet.currencySymbol,
+                                    style: TextStyle(
+                                      color: primaryColor, 
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  wallet.walletName,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: textColor,
+                                  ),
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+                                      onPressed: () => _confirmDeleteWallet(index),
+                                    ),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 16,
+                                      color: textColor.withValues(alpha: 0.6),
+                                    ),
+                                  ],
+                                ),
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => WalletDetailScreen(wallet: wallet),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: _wallets.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.account_balance_wallet_outlined,
-                        size: 80,
-                        color: primaryColor.withValues(alpha: 0.5),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'empty_wallets'.tr(),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16, 
-                          color: textColor.withValues(alpha: 0.6),
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  )
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                  itemCount: _wallets.length,
-                  itemBuilder: (context, index) {
-                    final wallet = _wallets[index];
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 15),
-                          decoration: BoxDecoration(
-                            color: textColor.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: textColor.withValues(alpha: 0.12),
-                              width: 1,
-                            ),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            leading: CircleAvatar(
-                              backgroundColor: primaryColor.withValues(alpha: 0.2),
-                              child: Text(
-                                wallet.currencySymbol == 'g' ? 'Au' : wallet.currencySymbol,
-                                style: TextStyle(
-                                  color: primaryColor, 
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                            title: Text(
-                              wallet.walletName,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
-                                  onPressed: () => _confirmDeleteWallet(index),
-                                ),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: textColor.withValues(alpha: 0.6),
-                                ),
-                              ],
-                            ),
-                            onTap: () async {
-                              await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => WalletDetailScreen(wallet: wallet),
-                                ),
-                              );
-                              // Detay ekranında yapılan (ekleme/silme) değişikliklerin web arayüzünde 
-                              // anında güncellenip kalıcı hafızaya yazılması için setState içine alındı!
-                              setState(() {
-                                _saveWallets();
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddWalletDialog,
-        backgroundColor: primaryColor,
-        child: Icon(Icons.add, color: isDark ? Colors.blueGrey.shade900 : Colors.white),
-      ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: _showAddWalletDialog,
+            backgroundColor: primaryColor,
+            child: Icon(Icons.add, color: isDark ? Colors.blueGrey.shade900 : Colors.white),
+          ),
+        );
+      },
     );
   }
 }

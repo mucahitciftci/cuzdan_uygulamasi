@@ -1,10 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'theme/app_theme.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'models/asset_model.dart';
+import 'models/wallet_model.dart';
 import 'screens/login_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await Hive.initFlutter();
+  
+  Hive.registerAdapter(AssetAdapter());
+  Hive.registerAdapter(WalletAdapter());
+  
+  // Hem cüzdanlar hem de ayarlar için kutuları açıyoruz
+  await Hive.openBox<Wallet>('wallets_box');
+  final settingsBox = await Hive.openBox('settings_box');
+
+  // --- KAYITLI TEMAYI OKUMA VE BAŞLANGIÇTA SET ETME ---
+  final bool? isDarkMode = settingsBox.get('isDarkMode') as bool?;
+  if (isDarkMode != null) {
+    AppTheme.themeModeNotifier.value = isDarkMode ? ThemeMode.dark : ThemeMode.light;
+  }
+
   await EasyLocalization.ensureInitialized();
 
   runApp(
@@ -17,42 +36,26 @@ void main() async {
   );
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  @override
-  void initState() {
-    super.initState();
-    // Tema her değiştiğinde MyApp widget'ını zorunlu olarak yeniden çizdiriyoruz
-    AppTheme.themeNotifier.addListener(_themeListener);
-  }
-
-  @override
-  void dispose() {
-    AppTheme.themeNotifier.removeListener(_themeListener);
-    super.dispose();
-  }
-
-  void _themeListener() {
-    setState(() {}); // En üst seviyede ekranı yeniden çizerek temayı anında uygular
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: AppTheme.themeNotifier.value, // Güncel tema modu değerini veriyoruz
-      home: const LoginScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppTheme.themeModeNotifier,
+      builder: (context, currentThemeMode, _) {
+        return MaterialApp(
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          title: 'Cüzdan Uygulaması',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: currentThemeMode,
+          home: const LoginScreen(),
+        );
+      },
     );
   }
 }

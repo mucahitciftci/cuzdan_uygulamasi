@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../models/wallet_model.dart';
 import '../models/asset_model.dart';
 import '../theme/app_theme.dart';
@@ -19,7 +20,20 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   final _totalInvestedController = TextEditingController();
-  String _selectedUnitType = 'piece';
+  
+  // --- HARDCODE ENGELLEMEK İÇİN STATİK SABİTLER ---
+  static const String _boxWalletsName = 'wallets_box';
+  static const String _currencyGold = 'g';
+  static const String _textGoldGr = 'Gr';
+  
+  // Birim Tipleri Sabitleri
+  static const String _unitPiece = 'piece';
+  static const String _unitGram = 'gram';
+  static const String _unitLot = 'lot';
+  static const String _unitQuarter = 'quarter';
+  static const String _unitHalf = 'half';
+
+  String _selectedUnitType = _unitPiece;
 
   double get _totalBalance {
     double total = 0;
@@ -29,11 +43,9 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
     return total;
   }
 
-  // --- GRAFİK SEKTÖRLERİNİ HESAPLAYAN GÜNCELLENMİŞ FONKSİYON ---
   List<PieChartSectionData> _getChartSections(ThemeData theme, double total) {
     if (total == 0) return [];
 
-    // Grafik renkleri için uyumlu ve saydamlaştırılmış bir palet oluşturuyoruz (withValues kullanıldı)
     final List<Color> colors = [
       theme.primaryColor.withValues(alpha: 0.65),
       Colors.purpleAccent.withValues(alpha: 0.65),
@@ -51,15 +63,13 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
       return PieChartSectionData(
         color: colors[index % colors.length],
         value: asset.totalValue,
-        // Yüzde ve isimlerin rahat okunabilmesi için yazı düzenini iyileştirdik
         title: '${asset.assetName}\n%${percentage.toStringAsFixed(1)}',
-        radius: 75, // --- DEĞİŞİKLİK: Dilim kalınlığı 55'ten 75'e çıkarılarak büyütüldü ---
+        radius: 75,
         titleStyle: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.bold,
           color: isDark ? Colors.white : Colors.black87,
         ),
-        // Dilimlerin saydamlıkta birbirine girmemesi için şık bir sınır çizgisi ekledik
         borderSide: BorderSide(
           color: (isDark ? Colors.white : Colors.black87).withValues(alpha: 0.15),
           width: 1.5,
@@ -159,11 +169,11 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                     ),
                   ),
                   items: [
-                    DropdownMenuItem(value: 'piece', child: Text('unit_type_piece'.tr(), style: TextStyle(color: textColor))),
-                    DropdownMenuItem(value: 'gram', child: Text('unit_type_gram'.tr(), style: TextStyle(color: textColor))),
-                    DropdownMenuItem(value: 'lot', child: Text('unit_type_lot'.tr(), style: TextStyle(color: textColor))),
-                    DropdownMenuItem(value: 'quarter', child: Text('unit_type_quarter'.tr(), style: TextStyle(color: textColor))),
-                    DropdownMenuItem(value: 'half', child: Text('unit_type_half'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: _unitPiece, child: Text('unit_type_piece'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: _unitGram, child: Text('unit_type_gram'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: _unitLot, child: Text('unit_type_lot'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: _unitQuarter, child: Text('unit_type_quarter'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: _unitHalf, child: Text('unit_type_half'.tr(), style: TextStyle(color: textColor))),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -189,7 +199,7 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                 backgroundColor: theme.primaryColor,
                 foregroundColor: isDark ? Colors.blueGrey.shade900 : Colors.white,
               ),
-              onPressed: () {
+              onPressed: () async {
                 final name = _nameController.text.trim();
                 final amount = double.tryParse(_amountController.text) ?? 0.0;
                 final totalInvested = double.tryParse(_totalInvestedController.text) ?? 0.0;
@@ -211,7 +221,11 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                   );
                 });
 
+                await widget.wallet.save();
+                await Hive.box<Wallet>(_boxWalletsName).flush();
+
                 _clearControllers();
+                if (!context.mounted) return;
                 Navigator.of(ctx).pop();
               },
               child: Text('button_add'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -254,10 +268,15 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
               backgroundColor: theme.colorScheme.error,
               foregroundColor: theme.colorScheme.onError,
             ),
-            onPressed: () {
+            onPressed: () async {
               setState(() {
                 widget.wallet.assets.removeAt(index);
               });
+
+              await widget.wallet.save();
+              await Hive.box<Wallet>(_boxWalletsName).flush();
+              
+              if (!context.mounted) return;
               Navigator.of(ctx).pop();
             },
             child: Text('button_delete'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -271,7 +290,7 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
     _nameController.clear();
     _amountController.clear();
     _totalInvestedController.clear();
-    _selectedUnitType = 'piece';
+    _selectedUnitType = _unitPiece;
   }
 
   @override
@@ -360,7 +379,6 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // --- TOP BAKIYE KARTI (Cam Efektli) ---
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 child: ClipRRect(
@@ -389,7 +407,7 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '${total.toStringAsFixed(2)} ${widget.wallet.currencySymbol == 'g' ? 'Gr' : widget.wallet.currencySymbol}',
+                            '${total.toStringAsFixed(2)} ${widget.wallet.currencySymbol == _currencyGold ? _textGoldGr : widget.wallet.currencySymbol}',
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -403,8 +421,6 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                   ),
                 ),
               ),
-
-              // --- DİNAMİK BÜYÜTÜLMÜŞ VE SAYDAM PASTA GRAFİĞİ ---
               if (widget.wallet.assets.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
@@ -413,7 +429,7 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                       child: Container(
-                        height: 220, // --- DEĞİŞİKLİK: Daha büyük görünmesi için yükseklik 160'tan 220'ye çıkarıldı ---
+                        height: 220,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: textColor.withValues(alpha: 0.04),
@@ -425,8 +441,8 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                         ),
                         child: PieChart(
                           PieChartData(
-                            sectionsSpace: 5, // Dilimler arası boşluk hafifçe artırıldı
-                            centerSpaceRadius: 25, // --- DEĞİŞİKLİK: Merkez dairesi genişletilerek denge sağlandı ---
+                            sectionsSpace: 5,
+                            centerSpaceRadius: 25,
                             sections: _getChartSections(theme, total),
                           ),
                         ),
@@ -434,8 +450,6 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                     ),
                   ),
                 ),
-
-              // --- VARLIKLARIM BASLIGI ---
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                 child: Row(
@@ -453,8 +467,6 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                   ],
                 ),
               ),
-
-              // --- VARLIK LISTESI ---
               Expanded(
                 child: widget.wallet.assets.isEmpty
                     ? Center(
@@ -521,7 +533,7 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        '${asset.totalValue.toStringAsFixed(2)} ${widget.wallet.currencySymbol == 'g' ? 'Gr' : widget.wallet.currencySymbol}',
+                                        '${asset.totalValue.toStringAsFixed(2)} ${widget.wallet.currencySymbol == _currencyGold ? _textGoldGr : widget.wallet.currencySymbol}',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,

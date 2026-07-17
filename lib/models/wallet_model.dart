@@ -1,10 +1,21 @@
+import 'package:hive/hive.dart';
 import 'asset_model.dart';
 
-class Wallet {
+part 'wallet_model.g.dart'; // Otomatik üretilecek dosya
+
+@HiveType(typeId: 1) // Hive için benzersiz kimlik
+class Wallet extends HiveObject {
+  @HiveField(0)
   final String id;
+
+  @HiveField(1)
   final String walletName;
+
+  @HiveField(2)
   final String currencySymbol;
-  final List<Asset> assets;
+
+  @HiveField(3)
+  final List<Asset> assets; // Hive iç içe listeleri destekler
 
   Wallet({
     required this.id,
@@ -13,7 +24,6 @@ class Wallet {
     required this.assets,
   });
 
-  // JSON'dan nesneye dönüştürme
   factory Wallet.fromJson(Map<String, dynamic> json) {
     var assetList = json['assets'] as List;
     List<Asset> parsedAssets = assetList
@@ -28,7 +38,6 @@ class Wallet {
     );
   }
 
-  // Nesneden JSON'a dönüştürme
   Map<String, dynamic> toJson() {
     return {
       'id': id,

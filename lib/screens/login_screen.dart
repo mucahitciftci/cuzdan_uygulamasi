@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../theme/app_theme.dart';
 import 'wallet_list_screen.dart';
 
@@ -19,12 +19,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isSignUp = false;
 
-  // --- HARDCODE ENGELEMEK İÇİN STATİK STORAGE VE ASSET SABİTLERİ ---
+  // --- HARDCODE ENGELLEMEK İÇİN STATİK STORAGE VE ASSET SABİTLERİ ---
+  static const String _boxSettingsName = 'settings_box';
   static const String _keyEmail = 'email';
   static const String _keyPassword = 'password';
   static const String _keyUsername = 'username';
   static const String _defaultUserFallback = 'Kullanıcı';
-  static const String _assetWalletLogo = 'assets/images/ic_wallet_blue.png'; // Yeni logonun yolu
+  static const String _assetWalletLogo = 'assets/images/ic_wallet_blue.png';
+  
+  // Dil Sabitleri
+  static const String _langTr = 'tr';
+  static const String _langEn = 'en';
 
   @override
   void initState() {
@@ -32,15 +37,13 @@ class _LoginScreenState extends State<LoginScreen> {
     _loadSavedCredentials();
   }
 
-  void _loadSavedCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
+  void _loadSavedCredentials() {
+    final settingsBox = Hive.box(_boxSettingsName);
     
-    if (!mounted) return;
-
     setState(() {
-      _emailController.text = prefs.getString(_keyEmail) ?? '';
-      _nameController.text = prefs.getString(_keyUsername) ?? '';
-      _passwordController.text = prefs.getString(_keyPassword) ?? '';
+      _emailController.text = settingsBox.get(_keyEmail, defaultValue: '') as String;
+      _nameController.text = settingsBox.get(_keyUsername, defaultValue: '') as String;
+      _passwordController.text = settingsBox.get(_keyPassword, defaultValue: '') as String;
     });
   }
 
@@ -54,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
+    final settingsBox = Hive.box(_boxSettingsName);
 
     if (_isSignUp) {
       if (name.isEmpty) {
@@ -62,10 +65,13 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
       
-      await prefs.setString(_keyEmail, email);
-      await prefs.setString(_keyPassword, password);
-      await prefs.setString(_keyUsername, name);
+      await settingsBox.put(_keyEmail, email);
+      await settingsBox.put(_keyPassword, password);
+      await settingsBox.put(_keyUsername, name);
+      
+      await settingsBox.flush();
 
+      // DÜZELTME: context.mounted yerine doğrudan State'in mounted kontrolü yapıldı
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -80,11 +86,12 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.clear();
       });
     } else {
-      final savedEmail = prefs.getString(_keyEmail);
-      final savedPassword = prefs.getString(_keyPassword);
-      final savedUsername = prefs.getString(_keyUsername) ?? _defaultUserFallback;
+      final savedEmail = settingsBox.get(_keyEmail) as String?;
+      final savedPassword = settingsBox.get(_keyPassword) as String?;
+      final savedUsername = settingsBox.get(_keyUsername, defaultValue: _defaultUserFallback) as String;
 
       if (email == savedEmail && password == savedPassword) {
+        // DÜZELTME: context.mounted yerine doğrudan State'in mounted kontrolü yapıldı
         if (!mounted) return;
 
         Navigator.of(context).pushReplacement(
@@ -153,13 +160,11 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Stack(
           children: [
-            // --- SAĞ ÜST KÖŞE BUTONLARI ---
             Positioned(
               top: 40,
               right: 20,
               child: Row(
                 children: [
-                  // Tema Değiştirici Buton
                   ClipRRect(
                     borderRadius: BorderRadius.circular(30),
                     child: BackdropFilter(
@@ -175,7 +180,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             isDark ? Icons.dark_mode : Icons.light_mode,
                             color: textColor,
                           ),
-                          tooltip: isDark ? 'Koyu Tema / Dark Theme' : 'Açık Tema / Light Theme',
                           onPressed: () {
                             setState(() {
                               AppTheme.toggleTheme();
@@ -186,7 +190,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  // Dil Değiştirici Buton
                   ClipRRect(
                     borderRadius: BorderRadius.circular(30),
                     child: BackdropFilter(
@@ -199,13 +202,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: IconButton(
                           icon: Icon(Icons.language, color: textColor),
-                          tooltip: 'Dil Değiştir / Change Language',
                           onPressed: () {
                             setState(() {
-                              if (context.locale == const Locale('tr')) {
-                                context.setLocale(const Locale('en'));
+                              if (context.locale == const Locale(_langTr)) {
+                                context.setLocale(const Locale(_langEn));
                               } else {
-                                context.setLocale(const Locale('tr'));
+                                context.setLocale(const Locale(_langTr));
                               }
                             });
                           },
@@ -216,8 +218,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ),
-
-            // --- GİRİŞ / KAYIT KARTI ---
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
@@ -239,7 +239,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // --- YENI LOGO BURAYA ENTEGRE EDİLMEDİ ---
                           Image.asset(
                             _assetWalletLogo,
                             width: 68,
@@ -313,9 +312,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Text(
                               _isSignUp ? 'btn_signup'.tr() : 'btn_login'.tr(),
                               style: const TextStyle(
-                                fontSize: 15, 
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5,
+                                  fontSize: 15, 
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.5,
                               ),
                             ),
                           ),

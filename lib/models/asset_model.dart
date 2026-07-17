@@ -1,9 +1,25 @@
-class Asset {
+import 'package:hive/hive.dart';
+
+part 'asset_model.g.dart'; // Otomatik üretilecek dosya
+
+@HiveType(typeId: 0) // Hive için benzersiz kimlik
+class Asset extends HiveObject {
+  @HiveField(0)
   final String id;
+
+  @HiveField(1)
   final String assetName;
+
+  @HiveField(2)
   final double amount;
+
+  @HiveField(3)
   final String symbol;
+
+  @HiveField(4)
   final String unitType;
+
+  @HiveField(5)
   final double unitPrice;
 
   Asset({
@@ -17,7 +33,6 @@ class Asset {
 
   double get totalValue => amount * unitPrice;
 
-  // JSON'dan nesneye dönüştürme
   factory Asset.fromJson(Map<String, dynamic> json) {
     return Asset(
       id: json['id'] as String,
@@ -29,7 +44,6 @@ class Asset {
     );
   }
 
-  // Nesneden JSON'a dönüştürme
   Map<String, dynamic> toJson() {
     return {
       'id': id,
