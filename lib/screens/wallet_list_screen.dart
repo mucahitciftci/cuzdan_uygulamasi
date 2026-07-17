@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../models/wallet_model.dart';
+import '../theme/app_theme.dart';
 import 'wallet_detail_screen.dart';
 import 'login_screen.dart';
 
@@ -20,55 +21,63 @@ class _WalletListScreenState extends State<WalletListScreen> {
   String _selectedCurrency = '₺';
 
   void _showAddWalletDialog() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final dialogBg = isDark ? Colors.blueGrey.shade900 : Colors.white;
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: Colors.blueGrey.shade900.withValues(alpha: 0.95),
+          backgroundColor: dialogBg.withValues(alpha: 0.95),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+            side: BorderSide(color: textColor.withValues(alpha: 0.15)),
           ),
           title: Text(
             'dialog_title'.tr(),
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: _nameController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: textColor),
                 decoration: InputDecoration(
                   labelText: 'wallet_name_label'.tr(),
-                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                  labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
                   hintText: 'wallet_name_hint'.tr(),
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                  hintStyle: TextStyle(color: textColor.withValues(alpha: 0.4)),
                   enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                    borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
                   ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.tealAccent),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: theme.primaryColor, width: 2),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
               DropdownButtonFormField<String>(
                 value: _selectedCurrency,
-                dropdownColor: Colors.blueGrey.shade900,
-                style: const TextStyle(color: Colors.white),
+                dropdownColor: dialogBg,
+                style: TextStyle(color: textColor),
                 decoration: InputDecoration(
                   labelText: 'currency_label'.tr(),
-                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                  labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
                   enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                    borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: theme.primaryColor, width: 2),
                   ),
                 ),
-                items: const [
-                  DropdownMenuItem(value: '₺', child: Text('Türk Lirası (₺)', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: '\$', child: Text('US Dollar (\$)', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: '€', child: Text('Euro (€)', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: 'g', child: Text('Altın (g)', style: TextStyle(color: Colors.white))),
+                items: [
+                  DropdownMenuItem(value: '₺', child: Text('Türk Lirası (₺)', style: TextStyle(color: textColor))),
+                  DropdownMenuItem(value: '\$', child: Text('US Dollar (\$)', style: TextStyle(color: textColor))),
+                  DropdownMenuItem(value: '€', child: Text('Euro (€)', style: TextStyle(color: textColor))),
+                  DropdownMenuItem(value: 'g', child: Text('Altın (g)', style: TextStyle(color: textColor))),
                 ],
                 onChanged: (value) {
                   if (value != null) {
@@ -86,12 +95,12 @@ class _WalletListScreenState extends State<WalletListScreen> {
                 _nameController.clear();
                 Navigator.of(ctx).pop();
               },
-              child: Text('button_cancel'.tr(), style: TextStyle(color: Colors.tealAccent.shade400)),
+              child: Text('button_cancel'.tr(), style: TextStyle(color: theme.primaryColor)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.tealAccent.shade400,
-                foregroundColor: Colors.blueGrey.shade900,
+                backgroundColor: theme.primaryColor,
+                foregroundColor: isDark ? Colors.blueGrey.shade900 : Colors.white,
               ),
               onPressed: () {
                 if (_nameController.text.trim().isEmpty) return;
@@ -120,36 +129,44 @@ class _WalletListScreenState extends State<WalletListScreen> {
   }
 
   void _confirmDeleteWallet(int index) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final dialogBg = isDark ? Colors.blueGrey.shade900 : Colors.white;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.blueGrey.shade900.withValues(alpha: 0.95),
+        backgroundColor: dialogBg.withValues(alpha: 0.95),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+          side: BorderSide(color: textColor.withValues(alpha: 0.15)),
         ),
         title: Text(
           'delete_wallet_title'.tr(),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
         ),
         content: Text(
           'delete_wallet_message'.tr(args: [_wallets[index].walletName]),
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+          style: TextStyle(color: textColor.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('button_cancel'.tr(), style: TextStyle(color: Colors.tealAccent.shade400)),
+            child: Text('button_cancel'.tr(), style: TextStyle(color: theme.primaryColor)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
             onPressed: () {
               setState(() {
                 _wallets.removeAt(index);
               });
               Navigator.of(ctx).pop();
             },
-            child: Text('button_delete'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text('button_delete'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -164,36 +181,59 @@ class _WalletListScreenState extends State<WalletListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final primaryColor = theme.primaryColor;
+
+    // Temaya göre dinamik arka plan degrade geçişi
+    final gradientColors = isDark
+        ? [Colors.blueGrey.shade900, Colors.blueGrey.shade700, Colors.teal.shade900]
+        : [Colors.teal.shade50, Colors.blueGrey.shade50, Colors.white];
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
-        // --- YENİLİK: Başlığı Havalı Bir Cam Blok İçine Aldık ---
         child: ClipRRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: AppBar(
               title: Text(
                 'app_title'.tr(args: [widget.username]),
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold, 
                   letterSpacing: 1.2,
-                  color: Colors.white,
+                  color: textColor,
                   fontSize: 20,
                 ),
               ),
-              backgroundColor: Colors.white.withValues(alpha: 0.05), // Hafif saydam blok arka planı
+              backgroundColor: textColor.withValues(alpha: 0.05),
               elevation: 0,
               centerTitle: true,
               shape: Border(
                 bottom: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.1), // Alt ince parıltılı sınır çizgisi
+                  color: textColor.withValues(alpha: 0.1),
                   width: 1,
                 ),
               ),
               actions: [
+                // --- TEMA DEĞİŞTİRME BUTONU (Simgeler senin istediğin gibi tam eşlendi!) ---
                 IconButton(
-                  icon: const Icon(Icons.language, color: Colors.white),
+                  icon: Icon(
+                    // Koyu temadaysak Ay (dark_mode), Açık temadaysak Güneş (light_mode) görünüyor.
+                    isDark ? Icons.dark_mode : Icons.light_mode,
+                    color: textColor,
+                  ),
+                  tooltip: isDark ? 'Koyu Tema / Dark Theme' : 'Açık Tema / Light Theme',
+                  onPressed: () {
+                    setState(() {
+                      AppTheme.toggleTheme();
+                    });
+                  },
+                ),
+                IconButton(
+                  icon: Icon(Icons.language, color: textColor),
                   onPressed: () {
                     if (context.locale == const Locale('tr')) {
                       context.setLocale(const Locale('en'));
@@ -203,7 +243,7 @@ class _WalletListScreenState extends State<WalletListScreen> {
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.logout, color: Colors.white),
+                  icon: Icon(Icons.logout, color: textColor),
                   onPressed: () {
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -216,16 +256,11 @@ class _WalletListScreenState extends State<WalletListScreen> {
         ),
       ),
       body: Container(
-        // --- YENİLİK: Daha Açık, Tatlı ve Ferah Renk Geçişleri ---
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.blueGrey.shade900,
-              Colors.blueGrey.shade700, // Daha açık tonda gri-mavi
-              Colors.teal.shade900,      // Boğucu lacivert yerine asil teal geçişi
-            ],
+            colors: gradientColors,
           ),
         ),
         child: SafeArea(
@@ -237,7 +272,7 @@ class _WalletListScreenState extends State<WalletListScreen> {
                       Icon(
                         Icons.account_balance_wallet_outlined,
                         size: 80,
-                        color: Colors.tealAccent.shade400.withValues(alpha: 0.5),
+                        color: primaryColor.withValues(alpha: 0.5),
                       ),
                       const SizedBox(height: 20),
                       Text(
@@ -245,12 +280,12 @@ class _WalletListScreenState extends State<WalletListScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16, 
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: textColor.withValues(alpha: 0.6),
                           height: 1.5,
                         ),
                       ),
                     ],
-                  ),
+                  )
                 )
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -264,21 +299,21 @@ class _WalletListScreenState extends State<WalletListScreen> {
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 15),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.06),
+                            color: textColor.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.12),
+                              color: textColor.withValues(alpha: 0.12),
                               width: 1,
                             ),
                           ),
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                             leading: CircleAvatar(
-                              backgroundColor: Colors.tealAccent.shade400.withValues(alpha: 0.2),
+                              backgroundColor: primaryColor.withValues(alpha: 0.2),
                               child: Text(
                                 wallet.currencySymbol == 'g' ? 'Au' : wallet.currencySymbol,
                                 style: TextStyle(
-                                  color: Colors.tealAccent.shade400, 
+                                  color: primaryColor, 
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
                                 ),
@@ -286,23 +321,23 @@ class _WalletListScreenState extends State<WalletListScreen> {
                             ),
                             title: Text(
                               wallet.walletName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: textColor,
                               ),
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                  icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
                                   onPressed: () => _confirmDeleteWallet(index),
                                 ),
-                                const Icon(
+                                Icon(
                                   Icons.arrow_forward_ios,
                                   size: 16,
-                                  color: Colors.white60,
+                                  color: textColor.withValues(alpha: 0.6),
                                 ),
                               ],
                             ),
@@ -323,8 +358,8 @@ class _WalletListScreenState extends State<WalletListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddWalletDialog,
-        backgroundColor: Colors.tealAccent.shade400,
-        child: Icon(Icons.add, color: Colors.blueGrey.shade900),
+        backgroundColor: primaryColor,
+        child: Icon(Icons.add, color: isDark ? Colors.blueGrey.shade900 : Colors.white),
       ),
     );
   }

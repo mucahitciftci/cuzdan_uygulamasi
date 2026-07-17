@@ -1,44 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'screens/login_screen.dart'; // Bir sonraki adımda oluşturacağız
+import 'theme/app_theme.dart';
+import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
-  
-  // Hive Veritabanını başlatıyoruz
-  await Hive.initFlutter();
-  
-  // Kullanıcı bilgileri ve uygulama ayarlarını tutacağımız bir 'box' (kutu/tablo) açıyoruz
-  await Hive.openBox('auth_box');
 
   runApp(
     EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('tr')],
+      supportedLocales: const [Locale('tr'), Locale('en')],
       path: 'assets/lang',
       fallbackLocale: const Locale('tr'),
-      child: const PersonalWalletApp(),
+      child: const MyApp(),
     ),
   );
 }
 
-class PersonalWalletApp extends StatelessWidget {
-  const PersonalWalletApp({super.key});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Tema her değiştiğinde MyApp widget'ını zorunlu olarak yeniden çizdiriyoruz
+    AppTheme.themeNotifier.addListener(_themeListener);
+  }
+
+  @override
+  void dispose() {
+    AppTheme.themeNotifier.removeListener(_themeListener);
+    super.dispose();
+  }
+
+  void _themeListener() {
+    setState(() {}); // En üst seviyede ekranı yeniden çizerek temayı anında uygular
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
-      debugShowCheckedModeBanner: false,
-      title: 'Personal Wallet',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
-      ),
-      // İlk ekranımız artık Giriş Ekranı olacak!
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: AppTheme.themeNotifier.value, // Güncel tema modu değerini veriyoruz
       home: const LoginScreen(),
     );
   }

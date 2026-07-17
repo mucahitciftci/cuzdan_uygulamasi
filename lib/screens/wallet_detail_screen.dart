@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../models/wallet_model.dart';
 import '../models/asset_model.dart';
+import '../theme/app_theme.dart';
 
 class WalletDetailScreen extends StatefulWidget {
   final Wallet wallet;
@@ -16,10 +17,9 @@ class WalletDetailScreen extends StatefulWidget {
 class _WalletDetailScreenState extends State<WalletDetailScreen> {
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
-  final _totalInvestedController = TextEditingController(); // Kullanıcının yatırdığı toplam tutar girdisi
+  final _totalInvestedController = TextEditingController();
   String _selectedUnitType = 'piece';
 
-  // Modelindeki totalValue getter'ını kullanarak toplam bakiyeyi dinamik hesaplıyoruz
   double get _totalBalance {
     double total = 0;
     for (var asset in widget.wallet.assets) {
@@ -29,18 +29,23 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
   }
 
   void _showAddAssetDialog() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final dialogBg = isDark ? Colors.blueGrey.shade900 : Colors.white;
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: Colors.blueGrey.shade900.withValues(alpha: 0.95),
+          backgroundColor: dialogBg.withValues(alpha: 0.95),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: Colors.white.withValues(alpha: 0.15)), // HATA DÜZELTİLDİ: border yerine side kullanıldı
+            side: BorderSide(color: textColor.withValues(alpha: 0.15)),
           ),
           title: Text(
             'dialog_add_asset_title'.tr(),
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -48,17 +53,17 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
               children: [
                 TextField(
                   controller: _nameController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: textColor),
                   decoration: InputDecoration(
                     labelText: 'asset_name_label'.tr(),
-                    labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                    labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
                     hintText: 'asset_name_hint'.tr(),
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                    hintStyle: TextStyle(color: textColor.withValues(alpha: 0.4)),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                      borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
                     ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.tealAccent),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: theme.primaryColor, width: 2),
                     ),
                   ),
                 ),
@@ -66,17 +71,17 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                 TextField(
                   controller: _amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: textColor),
                   decoration: InputDecoration(
                     labelText: 'amount_label'.tr(),
-                    labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                    labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
                     hintText: 'amount_hint'.tr(),
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                    hintStyle: TextStyle(color: textColor.withValues(alpha: 0.4)),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                      borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
                     ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.tealAccent),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: theme.primaryColor, width: 2),
                     ),
                   ),
                 ),
@@ -84,38 +89,41 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                 TextField(
                   controller: _totalInvestedController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: textColor),
                   decoration: InputDecoration(
                     labelText: 'total_invested_label'.tr(),
-                    labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                    labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
                     hintText: 'total_invested_hint'.tr(),
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                    hintStyle: TextStyle(color: textColor.withValues(alpha: 0.4)),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                      borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
                     ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.tealAccent),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: theme.primaryColor, width: 2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
                 DropdownButtonFormField<String>(
                   initialValue: _selectedUnitType,
-                  dropdownColor: Colors.blueGrey.shade900,
-                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: dialogBg,
+                  style: TextStyle(color: textColor),
                   decoration: InputDecoration(
                     labelText: 'unit_type_label'.tr(),
-                    labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                    labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                      borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: theme.primaryColor, width: 2),
                     ),
                   ),
                   items: [
-                    DropdownMenuItem(value: 'piece', child: Text('unit_type_piece'.tr(), style: const TextStyle(color: Colors.white))),
-                    DropdownMenuItem(value: 'gram', child: Text('unit_type_gram'.tr(), style: const TextStyle(color: Colors.white))),
-                    DropdownMenuItem(value: 'lot', child: Text('unit_type_lot'.tr(), style: const TextStyle(color: Colors.white))),
-                    DropdownMenuItem(value: 'quarter', child: Text('unit_type_quarter'.tr(), style: const TextStyle(color: Colors.white))),
-                    DropdownMenuItem(value: 'half', child: Text('unit_type_half'.tr(), style: const TextStyle(color: Colors.white))),
+                    DropdownMenuItem(value: 'piece', child: Text('unit_type_piece'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: 'gram', child: Text('unit_type_gram'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: 'lot', child: Text('unit_type_lot'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: 'quarter', child: Text('unit_type_quarter'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: 'half', child: Text('unit_type_half'.tr(), style: TextStyle(color: textColor))),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -134,12 +142,12 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                 _clearControllers();
                 Navigator.of(ctx).pop();
               },
-              child: Text('button_cancel'.tr(), style: TextStyle(color: Colors.tealAccent.shade400)),
+              child: Text('button_cancel'.tr(), style: TextStyle(color: theme.primaryColor)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.tealAccent.shade400,
-                foregroundColor: Colors.blueGrey.shade900,
+                backgroundColor: theme.primaryColor,
+                foregroundColor: isDark ? Colors.blueGrey.shade900 : Colors.white,
               ),
               onPressed: () {
                 final name = _nameController.text.trim();
@@ -148,7 +156,6 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
 
                 if (name.isEmpty || amount <= 0 || totalInvested <= 0) return;
 
-                // HATA DÜZELTİLDİ: Birim fiyatı dinamik olarak hesaplıyoruz
                 final calculatedUnitPrice = totalInvested / amount;
 
                 setState(() {
@@ -157,9 +164,9 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                       id: DateTime.now().toString(),
                       assetName: name,
                       amount: amount,
-                      symbol: widget.wallet.currencySymbol, // HATA DÜZELTİLDİ: symbol cüzdandan aktarıldı
+                      symbol: widget.wallet.currencySymbol,
                       unitType: _selectedUnitType,
-                      unitPrice: calculatedUnitPrice, // HATA DÜZELTİLDİ: unitPrice parametresi eklendi
+                      unitPrice: calculatedUnitPrice,
                     ),
                   );
                 });
@@ -176,36 +183,44 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
   }
 
   void _confirmDeleteAsset(int index) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final dialogBg = isDark ? Colors.blueGrey.shade900 : Colors.white;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.blueGrey.shade900.withValues(alpha: 0.95),
+        backgroundColor: dialogBg.withValues(alpha: 0.95),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.15)), // HATA DÜZELTİLDİ: border yerine side kullanıldı
+          side: BorderSide(color: textColor.withValues(alpha: 0.15)),
         ),
         title: Text(
           'delete_asset_title'.tr(),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
         ),
         content: Text(
           'delete_asset_message'.tr(args: [widget.wallet.assets[index].assetName]),
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+          style: TextStyle(color: textColor.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('button_cancel'.tr(), style: TextStyle(color: Colors.tealAccent.shade400)),
+            child: Text('button_cancel'.tr(), style: TextStyle(color: theme.primaryColor)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
             onPressed: () {
               setState(() {
                 widget.wallet.assets.removeAt(index);
               });
               Navigator.of(ctx).pop();
             },
-            child: Text('button_delete'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text('button_delete'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -229,19 +244,68 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final primaryColor = theme.primaryColor;
+
+    final gradientColors = isDark
+        ? [Colors.blueGrey.shade900, Colors.blueGrey.shade800, Colors.indigo.shade900]
+        : [Colors.teal.shade50, Colors.blueGrey.shade50, Colors.white];
+
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text(
-          widget.wallet.walletName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+      extendBodyBehindAppBar: true, // Yazım hatası düzeltildi
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: AppBar(
+              title: Text(
+                widget.wallet.walletName,
+                style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
+              ),
+              backgroundColor: textColor.withValues(alpha: 0.05),
+              elevation: 0,
+              centerTitle: true,
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back_ios, color: textColor),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              shape: Border(
+                bottom: BorderSide(
+                  color: textColor.withValues(alpha: 0.1),
+                  width: 1,
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    isDark ? Icons.dark_mode : Icons.light_mode,
+                    color: textColor,
+                  ),
+                  tooltip: isDark ? 'Koyu Tema / Dark Theme' : 'Açık Tema / Light Theme',
+                  onPressed: () {
+                    setState(() {
+                      AppTheme.toggleTheme();
+                    });
+                  },
+                ),
+                IconButton(
+                  icon: Icon(Icons.language, color: textColor),
+                  onPressed: () {
+                    setState(() {
+                      if (context.locale == const Locale('tr')) {
+                        context.setLocale(const Locale('en'));
+                      } else {
+                        context.setLocale(const Locale('tr'));
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       ),
       body: Container(
@@ -249,11 +313,7 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.blueGrey.shade900,
-              Colors.blueGrey.shade800,
-              Colors.indigo.shade900,
-            ],
+            colors: gradientColors,
           ),
         ),
         child: SafeArea(
@@ -269,10 +329,10 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: textColor.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: textColor.withValues(alpha: 0.15),
                           width: 1.5,
                         ),
                       ),
@@ -282,7 +342,7 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                             'total_balance'.tr(),
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: textColor.withValues(alpha: 0.6),
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -292,7 +352,7 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
-                              color: Colors.tealAccent.shade400,
+                              color: primaryColor,
                               letterSpacing: 1,
                             ),
                           ),
@@ -308,14 +368,14 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
                 child: Row(
                   children: [
-                    const Icon(Icons.trending_up, color: Colors.tealAccent, size: 20),
+                    Icon(Icons.trending_up, color: primaryColor, size: 20), // HARDCODE RENK TEMİZLENDİ!
                     const SizedBox(width: 8),
                     Text(
                       'my_assets_title'.tr(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: textColor,
                       ),
                     ),
                   ],
@@ -332,13 +392,13 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                             Icon(
                               Icons.pie_chart_outline_outlined,
                               size: 64,
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: textColor.withValues(alpha: 0.4),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               'no_assets_yet'.tr(),
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: textColor.withValues(alpha: 0.5),
                                 fontSize: 14,
                               ),
                             ),
@@ -358,10 +418,10 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.05),
+                                  color: textColor.withValues(alpha: 0.05),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.1),
+                                    color: textColor.withValues(alpha: 0.1),
                                     width: 1,
                                   ),
                                 ),
@@ -369,10 +429,10 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                                   title: Text(
                                     asset.assetName,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
-                                      color: Colors.white,
+                                      color: textColor,
                                     ),
                                   ),
                                   subtitle: Padding(
@@ -380,7 +440,7 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                                     child: Text(
                                       '${'unit_label'.tr()}: ${asset.amount} | ${'calculated_unit_price_label'.tr()}: ${asset.unitPrice.toStringAsFixed(2)} ${widget.wallet.currencySymbol}',
                                       style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.5),
+                                        color: textColor.withValues(alpha: 0.5),
                                         fontSize: 12,
                                       ),
                                     ),
@@ -388,18 +448,17 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      // HATA DÜZELTİLDİ: asset.totalValue kullanıldı
                                       Text(
                                         '${asset.totalValue.toStringAsFixed(2)} ${widget.wallet.currencySymbol == 'g' ? 'Gr' : widget.wallet.currencySymbol}',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
-                                          color: Colors.tealAccent.shade400,
+                                          color: primaryColor,
                                         ),
                                       ),
                                       const SizedBox(width: 8),
                                       IconButton(
-                                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 22),
+                                        icon: Icon(Icons.delete_outline, color: theme.colorScheme.error, size: 22),
                                         onPressed: () => _confirmDeleteAsset(index),
                                       ),
                                     ],
@@ -417,8 +476,8 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddAssetDialog,
-        backgroundColor: Colors.tealAccent.shade400,
-        child: Icon(Icons.add, color: Colors.blueGrey.shade900),
+        backgroundColor: primaryColor,
+        child: Icon(Icons.add, color: isDark ? Colors.blueGrey.shade900 : Colors.white),
       ),
     );
   }
