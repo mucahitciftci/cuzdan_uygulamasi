@@ -98,7 +98,7 @@ class _WalletListScreenState extends State<WalletListScreen> {
               ),
               const SizedBox(height: 20),
               DropdownButtonFormField<String>(
-                value: _selectedCurrency,
+                initialValue: _selectedCurrency,
                 dropdownColor: dialogBg,
                 style: TextStyle(color: textColor),
                 decoration: InputDecoration(

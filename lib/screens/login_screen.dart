@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../theme/app_theme.dart'; // AppTheme import edildi
+import '../theme/app_theme.dart';
 import 'wallet_list_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,6 +19,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isSignUp = false;
 
+  // --- HARDCODE ENGELEMEK İÇİN STATİK STORAGE VE ASSET SABİTLERİ ---
+  static const String _keyEmail = 'email';
+  static const String _keyPassword = 'password';
+  static const String _keyUsername = 'username';
+  static const String _defaultUserFallback = 'Kullanıcı';
+  static const String _assetWalletLogo = 'assets/images/ic_wallet_blue.png'; // Yeni logonun yolu
+
   @override
   void initState() {
     super.initState();
@@ -27,10 +34,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _loadSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    if (!mounted) return;
+
     setState(() {
-      _emailController.text = prefs.getString('email') ?? '';
-      _nameController.text = prefs.getString('username') ?? '';
-      _passwordController.text = prefs.getString('password') ?? '';
+      _emailController.text = prefs.getString(_keyEmail) ?? '';
+      _nameController.text = prefs.getString(_keyUsername) ?? '';
+      _passwordController.text = prefs.getString(_keyPassword) ?? '';
     });
   }
 
@@ -52,9 +62,11 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
       
-      await prefs.setString('email', email);
-      await prefs.setString('password', password);
-      await prefs.setString('username', name);
+      await prefs.setString(_keyEmail, email);
+      await prefs.setString(_keyPassword, password);
+      await prefs.setString(_keyUsername, name);
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -68,11 +80,13 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.clear();
       });
     } else {
-      final savedEmail = prefs.getString('email');
-      final savedPassword = prefs.getString('password');
-      final savedUsername = prefs.getString('username') ?? 'Kullanıcı';
+      final savedEmail = prefs.getString(_keyEmail);
+      final savedPassword = prefs.getString(_keyPassword);
+      final savedUsername = prefs.getString(_keyUsername) ?? _defaultUserFallback;
 
       if (email == savedEmail && password == savedPassword) {
+        if (!mounted) return;
+
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => WalletListScreen(username: savedUsername),
@@ -139,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Stack(
           children: [
-            // --- SAĞ ÜST KÖŞE BUTONLARI (Dil ve Tema Değiştirici Yan Yana) ---
+            // --- SAĞ ÜST KÖŞE BUTONLARI ---
             Positioned(
               top: 40,
               right: 20,
@@ -171,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10), // İki buton arası boşluk
+                  const SizedBox(width: 10),
                   // Dil Değiştirici Buton
                   ClipRRect(
                     borderRadius: BorderRadius.circular(30),
@@ -225,10 +239,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Icon(
-                            Icons.account_balance_wallet_outlined,
-                            size: 64,
-                            color: primaryColor,
+                          // --- YENI LOGO BURAYA ENTEGRE EDİLMEDİ ---
+                          Image.asset(
+                            _assetWalletLogo,
+                            width: 68,
+                            height: 68,
                           ),
                           const SizedBox(height: 16),
                           Text(
