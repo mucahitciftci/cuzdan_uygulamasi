@@ -18,15 +18,14 @@ class WalletListScreen extends StatefulWidget {
 
 class _WalletListScreenState extends State<WalletListScreen> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _editNameController = TextEditingController();
   
-  // --- HARDCODE ENGELLEMEK İÇİN STATİK SABİTLER ---
   static const String _boxWalletsName = 'wallets_box';
   static const String _currencyTry = '₺';
   static const String _currencyUsd = '\$';
   static const String _currencyEur = '€';
   static const String _currencyGold = 'g';
   
-  // Dil ve etiket sabitleri
   static const String _keyLangTr = 'tr';
   static const String _keyLangEn = 'en';
   static const String _labelTry = 'Türk Lirası (₺)';
@@ -136,11 +135,116 @@ class _WalletListScreenState extends State<WalletListScreen> {
                 _nameController.clear();
                 _selectedCurrency = _currencyTry;
                 
-                // BuildContext asenkron işlemden sonra kullanılmadan önce mounted kontrolü yapılıyor
                 if (!context.mounted) return;
                 Navigator.of(ctx).pop();
               },
               child: Text('button_add'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- HEM İSİM HEM PARA BİRİMİ SEÇENEKLİ DÜZENLEME POP-UP'I ---
+  void _showEditWalletDialog(int index, Wallet wallet) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final dialogBg = isDark ? Colors.blueGrey.shade900 : Colors.white;
+
+    _editNameController.text = wallet.walletName;
+    String editSelectedCurrency = wallet.currencySymbol;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: dialogBg.withValues(alpha: 0.95),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: textColor.withValues(alpha: 0.15)),
+          ),
+          title: const Text(
+            'Cüzdanı Düzenle',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _editNameController,
+                style: TextStyle(color: textColor),
+                decoration: InputDecoration(
+                  labelText: 'Yeni Cüzdan Adı',
+                  labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: theme.primaryColor, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              DropdownButtonFormField<String>(
+                initialValue: editSelectedCurrency,
+                dropdownColor: dialogBg,
+                style: TextStyle(color: textColor),
+                decoration: InputDecoration(
+                  labelText: 'currency_label'.tr(),
+                  labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: theme.primaryColor, width: 2),
+                  ),
+                ),
+                items: [
+                  DropdownMenuItem(value: _currencyTry, child: Text(_labelTry, style: TextStyle(color: textColor))),
+                  DropdownMenuItem(value: _currencyUsd, child: Text(_labelUsd, style: TextStyle(color: textColor))),
+                  DropdownMenuItem(value: _currencyEur, child: Text(_labelEur, style: TextStyle(color: textColor))),
+                  DropdownMenuItem(value: _currencyGold, child: Text(_labelGold, style: TextStyle(color: textColor))),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() {
+                      editSelectedCurrency = value;
+                    });
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _editNameController.clear();
+                Navigator.of(ctx).pop();
+              },
+              child: Text('button_cancel'.tr(), style: TextStyle(color: theme.primaryColor)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.primaryColor,
+                foregroundColor: isDark ? Colors.blueGrey.shade900 : Colors.white,
+              ),
+              onPressed: () async {
+                final newName = _editNameController.text.trim();
+                if (newName.isEmpty) return;
+
+                wallet.walletName = newName;
+                wallet.currencySymbol = editSelectedCurrency;
+                
+                await wallet.save();
+                await _walletBox.flush();
+
+                _editNameController.clear();
+                if (!context.mounted) return;
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Güncelle', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -197,6 +301,7 @@ class _WalletListScreenState extends State<WalletListScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _editNameController.dispose();
     super.dispose();
   }
 
@@ -248,7 +353,6 @@ class _WalletListScreenState extends State<WalletListScreen> {
                         isDark ? Icons.dark_mode : Icons.light_mode,
                         color: textColor,
                       ),
-                      tooltip: isDark ? 'Koyu Tema / Dark Theme' : 'Açık Tema / Light Theme',
                       onPressed: () {
                         setState(() {
                           AppTheme.toggleTheme();
@@ -353,6 +457,10 @@ class _WalletListScreenState extends State<WalletListScreen> {
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, color: Colors.orangeAccent),
+                                      onPressed: () => _showEditWalletDialog(index, wallet),
+                                    ),
                                     IconButton(
                                       icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
                                       onPressed: () => _confirmDeleteWallet(index),

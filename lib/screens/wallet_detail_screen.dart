@@ -21,12 +21,10 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
   final _amountController = TextEditingController();
   final _totalInvestedController = TextEditingController();
   
-  // --- HARDCODE ENGELLEMEK İÇİN STATİK SABİTLER ---
   static const String _boxWalletsName = 'wallets_box';
   static const String _currencyGold = 'g';
   static const String _textGoldGr = 'Gr';
   
-  // Birim Tipleri Sabitleri
   static const String _unitPiece = 'piece';
   static const String _unitGram = 'gram';
   static const String _unitLot = 'lot';
@@ -229,6 +227,162 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                 Navigator.of(ctx).pop();
               },
               child: Text('button_add'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- YENİ ÖZELLİK: VARLIK DÜZENLEME POP-UP'I ---
+  void _showEditAssetDialog(int index, Asset asset) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final dialogBg = isDark ? Colors.blueGrey.shade900 : Colors.white;
+
+    _nameController.text = asset.assetName;
+    _amountController.text = asset.amount.toString();
+    _totalInvestedController.text = asset.totalValue.toString();
+    _selectedUnitType = asset.unitType;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: dialogBg.withValues(alpha: 0.95),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: textColor.withValues(alpha: 0.15)),
+          ),
+          title: const Text(
+            'Varlığı Düzenle',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _nameController,
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'asset_name_label'.tr(),
+                    labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: theme.primaryColor, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'amount_label'.tr(),
+                    labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: theme.primaryColor, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: _totalInvestedController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'total_invested_label'.tr(),
+                    labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: theme.primaryColor, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedUnitType,
+                  dropdownColor: dialogBg,
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'unit_type_label'.tr(),
+                    labelStyle: TextStyle(color: textColor.withValues(alpha: 0.7)),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: textColor.withValues(alpha: 0.3)),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: theme.primaryColor, width: 2),
+                    ),
+                  ),
+                  items: [
+                    DropdownMenuItem(value: _unitPiece, child: Text('unit_type_piece'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: _unitGram, child: Text('unit_type_gram'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: _unitLot, child: Text('unit_type_lot'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: _unitQuarter, child: Text('unit_type_quarter'.tr(), style: TextStyle(color: textColor))),
+                    DropdownMenuItem(value: _unitHalf, child: Text('unit_type_half'.tr(), style: TextStyle(color: textColor))),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setDialogState(() {
+                        _selectedUnitType = value;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _clearControllers();
+                Navigator.of(ctx).pop();
+              },
+              child: Text('button_cancel'.tr(), style: TextStyle(color: theme.primaryColor)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.primaryColor,
+                foregroundColor: isDark ? Colors.blueGrey.shade900 : Colors.white,
+              ),
+              onPressed: () async {
+                final name = _nameController.text.trim();
+                final amount = double.tryParse(_amountController.text) ?? 0.0;
+                final totalInvested = double.tryParse(_totalInvestedController.text) ?? 0.0;
+
+                if (name.isEmpty || amount <= 0 || totalInvested <= 0) return;
+
+                final calculatedUnitPrice = totalInvested / amount;
+
+                setState(() {
+                  widget.wallet.assets[index] = Asset(
+                    id: asset.id,
+                    assetName: name,
+                    amount: amount,
+                    symbol: widget.wallet.currencySymbol,
+                    unitType: _selectedUnitType,
+                    unitPrice: calculatedUnitPrice,
+                  );
+                });
+
+                await widget.wallet.save();
+                await Hive.box<Wallet>(_boxWalletsName).flush();
+
+                _clearControllers();
+                if (!context.mounted) return;
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Güncelle', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -541,6 +695,11 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 8),
+                                      // DÜZENLEME BUTONU EKLEDİK
+                                      IconButton(
+                                        icon: const Icon(Icons.edit_outlined, color: Colors.orangeAccent, size: 22),
+                                        onPressed: () => _showEditAssetDialog(index, asset),
+                                      ),
                                       IconButton(
                                         icon: Icon(Icons.delete_outline, color: theme.colorScheme.error, size: 22),
                                         onPressed: () => _confirmDeleteAsset(index),

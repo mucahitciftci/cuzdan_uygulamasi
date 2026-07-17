@@ -1,5 +1,5 @@
 {
-  "app_title": "{}'s Wallets",
+  "app_title": "Mobile Wallet ({})",
   "empty_wallets": "You haven't added a wallet yet.\nAdd one now using the button below!",
   "dialog_title": "Create New Wallet",
   "wallet_name_label": "Wallet Name",
