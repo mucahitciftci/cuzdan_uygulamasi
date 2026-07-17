@@ -46,5 +46,6 @@
   "error_auth_failed": "Incorrect email or password!",
   "signup_success": "Registration successful! You can login now.",
   "error_title": "Error",
-  "btn_ok": "OK"
+  "btn_ok": "OK",
+  "error_invalid_email": "Please enter a valid email address."
 }

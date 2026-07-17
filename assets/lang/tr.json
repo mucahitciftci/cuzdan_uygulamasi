@@ -46,5 +46,6 @@
   "error_auth_failed": "E-posta veya şifre hatalı!",
   "signup_success": "Kayıt başarılı! Şimdi giriş yapabilirsiniz.",
   "error_title": "Hata",
-  "btn_ok": "Tamam"
+  "btn_ok": "Tamam",
+  "error_invalid_email": "Geçerli bir e-posta adresi giriniz."
 }

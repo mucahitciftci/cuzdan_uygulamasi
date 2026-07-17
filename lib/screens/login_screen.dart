@@ -52,8 +52,16 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
     final name = _nameController.text.trim();
 
+    // 1. Boşluk Kontrolü
     if (email.isEmpty || password.isEmpty) {
       _showError('error_all_fields'.tr());
+      return;
+    }
+
+    // --- REGEX İLE GERÇEK E-POSTA DOĞRULAMA KONTROLÜ ---
+    final emailRegex = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+    if (!emailRegex.hasMatch(email)) {
+      _showError('error_invalid_email'.tr());
       return;
     }
 
@@ -71,7 +79,6 @@ class _LoginScreenState extends State<LoginScreen> {
       
       await settingsBox.flush();
 
-      // DÜZELTME: context.mounted yerine doğrudan State'in mounted kontrolü yapıldı
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -91,7 +98,6 @@ class _LoginScreenState extends State<LoginScreen> {
       final savedUsername = settingsBox.get(_keyUsername, defaultValue: _defaultUserFallback) as String;
 
       if (email == savedEmail && password == savedPassword) {
-        // DÜZELTME: context.mounted yerine doğrudan State'in mounted kontrolü yapıldı
         if (!mounted) return;
 
         Navigator.of(context).pushReplacement(
