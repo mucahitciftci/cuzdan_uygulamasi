@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/wallet_model.dart';
 import '../theme/app_theme.dart';
 import 'wallet_detail_screen.dart';
@@ -18,7 +20,43 @@ class WalletListScreen extends StatefulWidget {
 class _WalletListScreenState extends State<WalletListScreen> {
   final List<Wallet> _wallets = [];
   final TextEditingController _nameController = TextEditingController();
-  String _selectedCurrency = '₺';
+  
+  // Hardcode anahtar kullanımı engellemek için statik sabit tanımlandı
+  static const String _storageKey = 'saved_wallets';
+  static const String _defaultCurrency = '₺';
+  
+  String _selectedCurrency = _defaultCurrency;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWallets();
+  }
+
+  // --- HAFIZADAN CÜZDANLARI YÜKLEME ---
+  void _loadWallets() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? walletsJson = prefs.getString(_storageKey); // Sabit kullanıldı
+    
+    if (walletsJson != null) {
+      final List<dynamic> decodedList = jsonDecode(walletsJson);
+      setState(() {
+        _wallets.clear();
+        _wallets.addAll(
+          decodedList.map((item) => Wallet.fromJson(item as Map<String, dynamic>)).toList()
+        );
+      });
+    }
+  }
+
+  // --- HAFIZAYA CÜZDANLARI KAYDETME ---
+  void _saveWallets() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String encodedData = jsonEncode(
+      _wallets.map((wallet) => wallet.toJson()).toList()
+    );
+    await prefs.setString(_storageKey, encodedData); // Sabit kullanıldı
+  }
 
   void _showAddWalletDialog() {
     final theme = Theme.of(context);
@@ -116,8 +154,9 @@ class _WalletListScreenState extends State<WalletListScreen> {
                   );
                 });
 
+                _saveWallets();
                 _nameController.clear();
-                _selectedCurrency = '₺';
+                _selectedCurrency = _defaultCurrency; // Sabit kullanıldı
                 Navigator.of(ctx).pop();
               },
               child: Text('button_add'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -164,6 +203,7 @@ class _WalletListScreenState extends State<WalletListScreen> {
               setState(() {
                 _wallets.removeAt(index);
               });
+              _saveWallets();
               Navigator.of(ctx).pop();
             },
             child: Text('button_delete'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -186,7 +226,6 @@ class _WalletListScreenState extends State<WalletListScreen> {
     final textColor = isDark ? Colors.white : Colors.black87;
     final primaryColor = theme.primaryColor;
 
-    // Temaya göre dinamik arka plan degrade geçişi
     final gradientColors = isDark
         ? [Colors.blueGrey.shade900, Colors.blueGrey.shade700, Colors.teal.shade900]
         : [Colors.teal.shade50, Colors.blueGrey.shade50, Colors.white];
@@ -218,10 +257,8 @@ class _WalletListScreenState extends State<WalletListScreen> {
                 ),
               ),
               actions: [
-                // --- TEMA DEĞİŞTİRME BUTONU (Simgeler senin istediğin gibi tam eşlendi!) ---
                 IconButton(
                   icon: Icon(
-                    // Koyu temadaysak Ay (dark_mode), Açık temadaysak Güneş (light_mode) görünüyor.
                     isDark ? Icons.dark_mode : Icons.light_mode,
                     color: textColor,
                   ),
@@ -341,12 +378,17 @@ class _WalletListScreenState extends State<WalletListScreen> {
                                 ),
                               ],
                             ),
-                            onTap: () {
-                              Navigator.of(context).push(
+                            onTap: () async {
+                              await Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (context) => WalletDetailScreen(wallet: wallet),
                                 ),
                               );
+                              // Detay ekranında yapılan (ekleme/silme) değişikliklerin web arayüzünde 
+                              // anında güncellenip kalıcı hafızaya yazılması için setState içine alındı!
+                              setState(() {
+                                _saveWallets();
+                              });
                             },
                           ),
                         ),
