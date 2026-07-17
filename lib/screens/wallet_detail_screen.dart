@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../models/wallet_model.dart';
 import '../models/asset_model.dart';
 import '../theme/app_theme.dart';
@@ -26,6 +27,45 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
       total += asset.totalValue; 
     }
     return total;
+  }
+
+  // --- GRAFİK SEKTÖRLERİNİ HESAPLAYAN GÜNCELLENMİŞ FONKSİYON ---
+  List<PieChartSectionData> _getChartSections(ThemeData theme, double total) {
+    if (total == 0) return [];
+
+    // Grafik renkleri için uyumlu ve saydamlaştırılmış bir palet oluşturuyoruz (withValues kullanıldı)
+    final List<Color> colors = [
+      theme.primaryColor.withValues(alpha: 0.65),
+      Colors.purpleAccent.withValues(alpha: 0.65),
+      Colors.blueAccent.withValues(alpha: 0.65),
+      Colors.orangeAccent.withValues(alpha: 0.65),
+      Colors.pinkAccent.withValues(alpha: 0.65),
+      Colors.amber.withValues(alpha: 0.65),
+    ];
+
+    return List.generate(widget.wallet.assets.length, (index) {
+      final asset = widget.wallet.assets[index];
+      final percentage = (asset.totalValue / total) * 100;
+      final isDark = theme.brightness == Brightness.dark;
+
+      return PieChartSectionData(
+        color: colors[index % colors.length],
+        value: asset.totalValue,
+        // Yüzde ve isimlerin rahat okunabilmesi için yazı düzenini iyileştirdik
+        title: '${asset.assetName}\n%${percentage.toStringAsFixed(1)}',
+        radius: 75, // --- DEĞİŞİKLİK: Dilim kalınlığı 55'ten 75'e çıkarılarak büyütüldü ---
+        titleStyle: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: isDark ? Colors.white : Colors.black87,
+        ),
+        // Dilimlerin saydamlıkta birbirine girmemesi için şık bir sınır çizgisi ekledik
+        borderSide: BorderSide(
+          color: (isDark ? Colors.white : Colors.black87).withValues(alpha: 0.15),
+          width: 1.5,
+        ),
+      );
+    });
   }
 
   void _showAddAssetDialog() {
@@ -248,13 +288,14 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final primaryColor = theme.primaryColor;
+    final total = _totalBalance;
 
     final gradientColors = isDark
         ? [Colors.blueGrey.shade900, Colors.blueGrey.shade800, Colors.indigo.shade900]
         : [Colors.teal.shade50, Colors.blueGrey.shade50, Colors.white];
 
     return Scaffold(
-      extendBodyBehindAppBar: true, // Yazım hatası düzeltildi
+      extendBodyBehindAppBar: true,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: ClipRRect(
@@ -321,13 +362,13 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
             children: [
               // --- TOP BAKIYE KARTI (Cam Efektli) ---
               Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                     child: Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: textColor.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(24),
@@ -346,11 +387,11 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                               letterSpacing: 1.2,
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           Text(
-                            '${_totalBalance.toStringAsFixed(2)} ${widget.wallet.currencySymbol == 'g' ? 'Gr' : widget.wallet.currencySymbol}',
+                            '${total.toStringAsFixed(2)} ${widget.wallet.currencySymbol == 'g' ? 'Gr' : widget.wallet.currencySymbol}',
                             style: TextStyle(
-                              fontSize: 32,
+                              fontSize: 28,
                               fontWeight: FontWeight.bold,
                               color: primaryColor,
                               letterSpacing: 1,
@@ -363,12 +404,43 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                 ),
               ),
 
+              // --- DİNAMİK BÜYÜTÜLMÜŞ VE SAYDAM PASTA GRAFİĞİ ---
+              if (widget.wallet.assets.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                      child: Container(
+                        height: 220, // --- DEĞİŞİKLİK: Daha büyük görünmesi için yükseklik 160'tan 220'ye çıkarıldı ---
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: textColor.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: textColor.withValues(alpha: 0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: PieChart(
+                          PieChartData(
+                            sectionsSpace: 5, // Dilimler arası boşluk hafifçe artırıldı
+                            centerSpaceRadius: 25, // --- DEĞİŞİKLİK: Merkez dairesi genişletilerek denge sağlandı ---
+                            sections: _getChartSections(theme, total),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
               // --- VARLIKLARIM BASLIGI ---
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                 child: Row(
                   children: [
-                    Icon(Icons.trending_up, color: primaryColor, size: 20), // HARDCODE RENK TEMİZLENDİ!
+                    Icon(Icons.trending_up, color: primaryColor, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       'my_assets_title'.tr(),
@@ -406,7 +478,7 @@ class _WalletDetailScreenState extends State<WalletDetailScreen> {
                         ),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                         itemCount: widget.wallet.assets.length,
                         itemBuilder: (context, index) {
                           final asset = widget.wallet.assets[index];
